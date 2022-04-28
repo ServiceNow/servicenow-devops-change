@@ -1,0 +1,38 @@
+name: 'ServiceNow DevOps Change'
+description: 'Pause/Resume Workflow Run based on Change Approval Status'
+inputs:
+  instance-name: 
+    description: 'ServiceNow Instance Name'
+    required: true
+  devops-integration-user-name:
+    description: 'Devops Integration User Name'
+    required: true
+  devops-integration-user-password:
+    description: 'Devops Integration User Password'
+    required: true
+  tool-id:
+    description: 'Orchestration Tool Id'
+    required: true
+  job-name:
+    description: 'Display Name of the Job'
+    required: true
+  context-github:
+    description: 'Github Context'
+    required: true
+  timeout:
+    description: 'The max. time in seconds to wait until the action should fail.'
+    required: false
+    default: '3600'
+  interval:
+    description: 'The time in seconds to wait between trying the API.'
+    required: false
+    default: '100'
+  change-request:
+    description: 'The inputs to create change with the requested details.'
+    required: true
+branding:
+  icon: 'refresh-ccw'
+  color: 'green'
+runs: 
+  using: 'node12'
+  main: 'dist/index.js'
