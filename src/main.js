@@ -5,7 +5,7 @@ const { tryFetch } = require('./lib/try-fetch');
 
 const main = async() => {
   try {
-    const instanceName = core.getInput('instance-name', { required: true });
+    const instanceUrl = core.getInput('instance-url', { required: true });
     const toolId = core.getInput('tool-id', { required: true });
     const username = core.getInput('devops-integration-user-name', { required: true });
     const passwd = core.getInput('devops-integration-user-password', { required: true });
@@ -14,10 +14,11 @@ const main = async() => {
     let changeRequestDetailsStr = core.getInput('change-request', { required: true });
     let githubContextStr = core.getInput('context-github', { required: true });
     let status = true;
+    let response;
 
     try {
-      await createChange({
-        instanceName,
+      response = await createChange({
+        instanceUrl,
         toolId,
         username,
         passwd,
@@ -27,7 +28,7 @@ const main = async() => {
       });
     } catch (err) {
       status = false;
-      core.setFailed(`Unknown Exception from Change Control API to create change for the given inputs.`);  
+      core.setFailed(err.message);
     }
 
     if (status) {
@@ -39,11 +40,11 @@ const main = async() => {
 
       let start = +new Date();
       
-      await tryFetch({
+      response = await tryFetch({
         start,
         interval,
         timeout,
-        instanceName,
+        instanceUrl,
         toolId,
         username,
         passwd,
@@ -51,12 +52,8 @@ const main = async() => {
         githubContextStr
       });
 
-      core.debug('Get change status was successfull.');
-      
-    } else {
-      core.setFailed('Change could not be created for the given inputs.');
+      console.log('Get change status was successfull.');  
     }
-   
   } catch (error) {
     core.setFailed(error.message);
   }

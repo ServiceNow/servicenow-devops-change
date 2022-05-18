@@ -5,7 +5,7 @@ async function tryFetch({
   start = +new Date(),
   interval,
   timeout,
-  instanceName,
+  instanceUrl,
   toolId,
   username,
   passwd,
@@ -14,7 +14,7 @@ async function tryFetch({
 }) {
     try {
         await doFetch({
-          instanceName,
+          instanceUrl,
           toolId,
           username,
           passwd,
@@ -43,11 +43,11 @@ async function tryFetch({
         }
 
         if (error.message == "202") {
-          throw new Error("Change has been created but the change is either rejected or cancelled.");
+          throw new Error("****Change has been created but the change is either rejected or cancelled.");
         }
 
         if (error.message == "201") {
-          console.log('\n\x1b[34m ****Change is pending for approval decision.....\x1b[0m');
+          console.log('\n****Change is pending for approval decision.');
         }
 
         // Wait and then continue
@@ -61,7 +61,7 @@ async function tryFetch({
           start,
           interval,
           timeout,
-          instanceName,
+          instanceUrl,
           toolId,
           username,
           passwd,

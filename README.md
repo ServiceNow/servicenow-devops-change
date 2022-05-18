@@ -14,7 +14,7 @@ On GitHub, go in your organization settings or repository settings, click on the
 Create secrets called 
 - `SN_DEVOPS_USER`
 - `SN_DEVOPS_PASSWORD`
-- `SN_INSTANCE_NAME` only the **domain** string is required from your ServiceNow instance URL, for example https://**domain**.service-now.com
+- `SN_INSTANCE_URL` your ServiceNow instance URL, for example **https://test.service-now.com**
 - `SN_ORCHESTRATION_TOOL_ID` only the **sys_id** is required for the GitHub tool created in your ServiceNow instance
 
 ## Step 3: Configure the GitHub Action if need to adapt for your needs or workflows
@@ -23,12 +23,12 @@ deploy:
     name: Deploy
     runs-on: ubuntu-latest
     steps:     
-      - name: Custom Change
+      - name: ServiceNow Change
         uses: ServiceNow/servicenow-devops-change@v1
         with:
           devops-integration-user-name: ${{ secrets.SN_DEVOPS_USER }}
           devops-integration-user-password: ${{ secrets.SN_DEVOPS_PASSWORD }}
-          instance-name: ${{ secrets.SN_INSTANCE_NAME }}
+          instance-url: ${{ secrets.SN_INSTANCE_URL }}
           tool-id: ${{ secrets.SN_ORCHESTRATION_TOOL_ID }}
           context-github: ${{ toJSON(github) }}
           job-name: 'Deploy'
@@ -48,9 +48,9 @@ The values for secrets should be setup in Step 1. Secrets should be created in S
 
 **Required**  DevOps Integration User Password to ServiceNow instance. 
 
-### `instance-name`
+### `instance-url`
 
-**Required**  Name of ServiceNow instance to send details required to create change. 
+**Required**  URL of ServiceNow instance to create change in ServiceNow. 
 
 ### `tool-id`
 
@@ -62,11 +62,11 @@ The values for secrets should be setup in Step 1. Secrets should be created in S
 
 ### `job-name`
 
-**Required**  Display name of the job given for attribute _name_ in which _steps_ have been added for custom change action.
+**Required**  Display name of the job given for attribute _name_ in which _steps_ have been added for ServiceNow change custom action.
 
 ### `change-request`
 
-The change request details to be used while creating change in ServiceNow instance. The change request is a JSON object surrounded by curly braces _{}_ containing key-value pair separated by a comma _,_. A key-value pair consists of a key and a value separated by a colon _:_. The keys supported in key-value pair are *setCloseCode* and *attributes* JSON object with supported keys *short_description*, *description*, *assignment_group*, *implementation_plan*, *backout_plan*, *test_plan*.
+The change request details to be used while creating change in ServiceNow instance. The change request is a JSON object surrounded by curly braces _{}_ containing key-value pair separated by a comma _,_. A key-value pair consists of a key and a value separated by a colon _:_. The keys supported in key-value pair are *setCloseCode*, *short_description*, *description*, *assignment_group*, *implementation_plan*, *backout_plan*, *test_plan*
 
 ### `interval`
 
@@ -83,7 +83,7 @@ No outputs produced.
 
 ## Support Model
 
-ServiceNow built this custom action with the intent to help customers get started faster in integrating ServiceNow DevOps with GitHub Actions, but __will not be providing formal support__. This integration is therefore considered "use at your own risk", and will rely on the open-source community to help drive fixes and feature enhancements via Issues. Occasionally, ServiceNow may choose to contribute to the open-source project to help address the highest priority Issues, and will do our best to keep the integrations updated with the latest API changes shipped with family releases. This is a good opportunity for our customers and community developers to step up and help drive iteration and improvement on these open-source integrations for everyone's benefit. 
+ServiceNow customers may request support through the [Now Support (HI) portal](https://support.servicenow.com/nav_to.do?uri=%2Fnow_support_home.do).
 
 ## Governance Model
 

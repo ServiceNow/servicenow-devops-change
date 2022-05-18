@@ -2,7 +2,7 @@
     "name": "servicenow-devops-change",
     "version": "1.0.0",
     "main": "dist/index.js",
-    "description": "A Github Action to wait for a change approval.",
+    "description": "A Github Action to pause/resume workflow run for a ServiceNow change approval.",
     "private": false,
     "scripts": {
         "build": "ncc build src/main.js"
@@ -23,9 +23,8 @@
     },
     "homepage": "https://github.com/ServiceNow/servicenow-devops-change#readme",
     "dependencies": {
-        "@actions/core": "^1.7.0",
-        "actions": "^1.3.0",
+        "@actions/core": "^1.8.2",
         "axios": "^0.24.0",
-        "follow-redirects": "^1.14.9"
+        "follow-redirects": "^1.15.0"
     }
 }

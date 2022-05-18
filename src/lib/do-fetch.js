@@ -2,14 +2,14 @@ const core = require('@actions/core');
 const axios = require('axios');
 
 async function doFetch({
-  instanceName,
+  instanceUrl,
   toolId,
   username,
   passwd,
   jobname,
   githubContextStr
 }) {
-    console.log(`\nTry Get Change Status API request...`);
+    console.log(`\nPolling for change status..........`);
 
     let githubContext = JSON.parse(githubContextStr);
     
@@ -18,7 +18,7 @@ async function doFetch({
     const buildNumber = `${githubContext.run_id}`;
     const attemptNumber = `${githubContext.run_attempt}`;
 
-    const endpoint = `https://${instanceName}.service-now.com/api/sn_devops/devops/orchestration/changeStatus?toolId=${toolId}&stageName=${jobname}&pipelineName=${pipelineName}&buildNumber=${buildNumber}&attemptNumber=${attemptNumber}`;
+    const endpoint = `${instanceUrl}/api/sn_devops/devops/orchestration/changeStatus?toolId=${toolId}&stageName=${jobname}&pipelineName=${pipelineName}&buildNumber=${buildNumber}&attemptNumber=${attemptNumber}`;
     
     let response = {};
     let status = false;
@@ -68,8 +68,6 @@ async function doFetch({
         }
     }
 
-    console.log('\nPolling for change status was successful: ' + status);
-
     if (status) {
         try {
           responseCode = response.status;
@@ -85,9 +83,10 @@ async function doFetch({
             throw new Error("500");
         }
 
-        console.log("\nChange Status Information is:\n"+JSON.stringify(changeStatus));
+        let details =  changeStatus.details;
+        console.log('\n     \x1b[1m\x1b[32m'+JSON.stringify(details)+'\x1b[0m\x1b[0m');
 
-        let changeState =  changeStatus.details.state;
+        let changeState =  details.status;
 
         if (responseCode == 201) {
           if (changeState == "pending_decision") {
@@ -97,7 +96,7 @@ async function doFetch({
         }
 
         if (responseCode == 200) {
-            console.log('\n\x1b[32m ****Change is Approved.....\x1b[0m');
+            console.log('\n****Change is Approved.');
         }
     } else
         throw new Error("500");

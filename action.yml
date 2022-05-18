@@ -1,8 +1,8 @@
 name: 'ServiceNow DevOps Change'
-description: 'Pause/Resume Workflow Run based on Change Approval Status'
+description: 'Pause/Resume Workflow Run based on ServiceNow Change Approval Status'
 inputs:
-  instance-name: 
-    description: 'ServiceNow Instance Name'
+  instance-url: 
+    description: 'ServiceNow Instance URL'
     required: true
   devops-integration-user-name:
     description: 'Devops Integration User Name'
@@ -28,7 +28,7 @@ inputs:
     required: false
     default: '100'
   change-request:
-    description: 'The inputs to create change with the requested details.'
+    description: 'The customized inputs to create change with the requested details.'
     required: true
 branding:
   icon: 'refresh-ccw'

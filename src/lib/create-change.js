@@ -2,7 +2,7 @@ const core = require('@actions/core');
 const axios = require('axios');
 
 async function createChange({
-  instanceName,
+  instanceUrl,
   toolId,
   username,
   passwd,
@@ -14,12 +14,13 @@ async function createChange({
     console.log('Calling Change Control API to create change....');
     
     let changeRequestDetails;
+    let attempts = 0;
 
     try {
       changeRequestDetails = JSON.parse(changeRequestDetailsStr);
     } catch (e) {
-        core.setFailed(`Failed parsing changeRequestDetails ${e}`);
-        throw new Error("500");
+        console.log(`Error occured with message ${e}`);
+        throw new Error("Failed parsing changeRequestDetails");
     }
 
     let githubContext;
@@ -27,8 +28,8 @@ async function createChange({
     try {
         githubContext = JSON.parse(githubContextStr);
     } catch (e) {
-        core.setFailed(`Exception parsing github context ${e}`);
-        throw new Error("500");
+        console.log(`Error occured with message ${e}`);
+        throw new Error("Exception parsing github context");
     }
 
     let payload;
@@ -47,27 +48,38 @@ async function createChange({
             'changeRequestDetails': changeRequestDetails
         };
     } catch (err) {
-      core.setFailed(`Exception preparing payload: \n\n${err.toJSON}\n\n`);
-      throw new Error("500");
+        console.log(`Error occured with message ${err}`);
+        throw new Error("Exception preparing payload");
     }
 
-    const postendpoint = `https://${instanceName}.service-now.com/api/sn_devops/devops/orchestration/changeControl?toolId=${toolId}&toolType=github_server`;
+    const postendpoint = `${instanceUrl}/api/sn_devops/devops/orchestration/changeControl?toolId=${toolId}&toolType=github_server`;
+    let response;
 
-    try {
-        const token = `${username}:${passwd}`;
-        const encodedToken = Buffer.from(token).toString('base64');
+    while (attempts < 3) {
+        try {
+            ++attempts;
+            const token = `${username}:${passwd}`;
+            const encodedToken = Buffer.from(token).toString('base64');
 
-        const defaultHeaders = {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            'Authorization': 'Basic ' + `${encodedToken}`
-        };
-        
-        let httpHeaders = { headers: defaultHeaders };
-        await axios.post(postendpoint, JSON.stringify(payload), httpHeaders);
-    } catch (err) {
-        core.setFailed(`Exception POSTing payload: \n\n${err.toJSON}\n\n`);
-        throw new Error(`Internal server error. An unexpected error occurred while processing the request.`);
+            const defaultHeaders = {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'Authorization': 'Basic ' + `${encodedToken}`
+            };
+            let httpHeaders = { headers: defaultHeaders };
+            response = await axios.post(postendpoint, JSON.stringify(payload), httpHeaders);
+            break;
+        } catch (err) {
+            if (!err.response) {
+                throw new Error('ServiceNow DevOps Change is not created. Please check ServiceNow logs for more details.');
+            }
+            
+            if ((err.response.status != 400) || ((attempts >= 3) && (err.response.status == 400))){
+                throw new Error('ServiceNow DevOps Change is not created. Please check ServiceNow logs for more details.');
+            }
+
+            await new Promise((resolve) => setTimeout(resolve, 30000));
+        }
     }
 }
 
