@@ -1,4 +1,4 @@
-name: 'ServiceNow DevOps Change'
+name: 'ServiceNow DevOps Change Automation'
 description: 'Pause/Resume Workflow Run based on ServiceNow Change Approval Status'
 inputs:
   instance-url: 
