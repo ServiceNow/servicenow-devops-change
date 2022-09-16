@@ -54,6 +54,7 @@ async function createChange({
 
     const postendpoint = `${instanceUrl}/api/sn_devops/devops/orchestration/changeControl?toolId=${toolId}&toolType=github_server`;
     let response;
+    let status = false;
 
     while (attempts < 3) {
         try {
@@ -68,17 +69,55 @@ async function createChange({
             };
             let httpHeaders = { headers: defaultHeaders };
             response = await axios.post(postendpoint, JSON.stringify(payload), httpHeaders);
+            status = true;
             break;
         } catch (err) {
-            if (!err.response) {
-                throw new Error('ServiceNow DevOps Change is not created. Please check ServiceNow logs for more details.');
+            if (err.message.includes('ECONNREFUSED') || err.message.includes('ENOTFOUND')) {
+                throw new Error('Invalid ServiceNow Instance URL. Please correct the URL and try again.');
             }
             
-            if ((err.response.status != 400) || ((attempts >= 3) && (err.response.status == 400))){
-                throw new Error('ServiceNow DevOps Change is not created. Please check ServiceNow logs for more details.');
+            if (err.message.includes('401')) {
+                throw new Error('Invalid Credentials. Please correct the credentials and try again.');
+            }
+               
+            if (err.message.includes('405')) {
+                throw new Error('Response Code from ServiceNow is 405. Please correct ServiceNow logs for more details.');
             }
 
+            if (!err.response) {
+                throw new Error('No response from ServiceNow. Please check ServiceNow logs for more details.');
+            }
+
+            if (err.response.status == 500) {
+                throw new Error('Response Code from ServiceNow is 500. Please check ServiceNow logs for more details.')
+            }
+            
+            if (err.response.status == 400) {
+                let errMsg = 'ServiceNow DevOps Change is not created. Please check ServiceNow logs for more details.';
+                let responseData = err.response.data;
+                if (responseData && responseData.error && responseData.error.message) {
+                    errMsg = responseData.error.message;
+                } else if (responseData && responseData.result && responseData.result.details && responseData.result.details.errors) {
+                    errMsg = 'ServiceNow DevOps Change is not created. ';
+                    let errors = err.response.data.result.details.errors;
+                    for (var index in errors) {
+                        errMsg = errMsg + errors[index].message;
+                    }
+                }
+                if (errMsg.indexOf('callbackURL') == -1)
+                    throw new Error(errMsg);
+                else if (attempts >= 3) {
+                    errMsg = 'Task/Step Execution not created in ServiceNow DevOps for this job/stage ' + jobname + '. Please check Inbound Events processing details in ServiceNow instance and ServiceNow logs for more details.';
+                    throw new Error(errMsg);
+                }
+            }
             await new Promise((resolve) => setTimeout(resolve, 30000));
+        }
+    }
+    if (status) {
+        var result = response.data.result;
+        if (result && result.message) {
+            console.log('\n     \x1b[1m\x1b[36m'+result.message+'\x1b[0m\x1b[0m');
         }
     }
 }

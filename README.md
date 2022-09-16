@@ -1,6 +1,6 @@
 # ServiceNow DevOps Change GitHub Action
 
-This custom action needs to be added at step level in a job to create change in ServiceNow instance.
+This custom action needs to be added at step level in a job to create change in ServiceNow instance. Using this custom action in parallel jobs is not supported.
 
 # Usage
 ## Step 1: Prepare values for setting up your secrets for Actions
@@ -17,10 +17,14 @@ Create secrets called
 - `SN_INSTANCE_URL` your ServiceNow instance URL, for example **https://test.service-now.com**
 - `SN_ORCHESTRATION_TOOL_ID` only the **sys_id** is required for the GitHub tool created in your ServiceNow instance
 
-## Step 3: Configure the GitHub Action if need to adapt for your needs or workflows
+## Step 3: Identify upstream job that must complete successfully before the job using this custom action will run
+Use needs to configure the identified upstream job. See [test.yml](.github/workflows/test.yml) for usage.
+
+## Step 4: Configure the GitHub Action if need to adapt for your needs or workflows
 ```yaml
 deploy:
     name: Deploy
+    needs: <upstream job>
     runs-on: ubuntu-latest
     steps:     
       - name: ServiceNow Change
