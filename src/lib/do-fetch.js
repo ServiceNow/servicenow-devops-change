@@ -85,6 +85,7 @@ async function doFetch({
 
         let details =  changeStatus.details;
         console.log('\n     \x1b[1m\x1b[32m'+JSON.stringify(details)+'\x1b[0m\x1b[0m');
+        core.setOutput("change_number", details.number);
 
         let changeState =  details.status;
 
