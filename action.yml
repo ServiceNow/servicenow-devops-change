@@ -30,6 +30,9 @@ inputs:
   change-request:
     description: 'The customized inputs to create change with the requested details.'
     required: true
+outputs:
+  change_number:
+    description: 'ServiceNow Change Request Number'
 branding:
   icon: 'refresh-ccw'
   color: 'green'
