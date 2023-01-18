@@ -28,6 +28,7 @@ deploy:
     runs-on: ubuntu-latest
     steps:     
       - name: ServiceNow Change
+        id: ServiceNowCR
         uses: ServiceNow/servicenow-devops-change@v1.34.2
         with:
           devops-integration-user-name: ${{ secrets.SN_DEVOPS_USER }}
@@ -39,6 +40,8 @@ deploy:
           change-request: '{"setCloseCode":"true","attributes":{"short_description":"Automated Software Deployment","description":"Automated Software Deployment.","assignment_group":"a715cd759f2002002920bde8132e7018","implementation_plan":"Software update is tested and results can be found in Test Summaries Tab; When the change is approved the implementation happens automated by the CICD pipeline within the change planned start and end time window.","backout_plan":"When software fails in production, the previous software release will be re-deployed.","test_plan":"Testing if the software was successfully deployed"}}'
           interval: '100'
           timeout: '3600'
+      - name: Show CR Output Example
+        run: echo "ServiceNOW Change Request: ${{ steps.ServiceNowCR.outputs.change_number }}"
 ```
 The values for secrets should be setup in Step 1. Secrets should be created in Step 2.
 
@@ -81,7 +84,10 @@ The time in seconds to wait between trying the API. The default value is 100 sec
 The max. time in seconds to wait until the action should fail. The default value is 3600 seconds.
 
 ## Outputs
-No outputs produced.
+
+### `change_number`
+
+The newly created Change Request Number from ServiceNOW
 
 # Notices
 
