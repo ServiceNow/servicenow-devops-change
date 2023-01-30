@@ -30,6 +30,18 @@ inputs:
   change-request:
     description: 'The customized inputs to create change with the requested details.'
     required: true
+  changeCreationTimeOut:
+    description: 'The max. time in seconds to wait until change created.'
+    required: false
+    default: '3600'
+  abortOnChangeCreationFailure:
+    description: 'This value will be used to resume or abort the pipeline if the change is not created within the mentioned time period in changeCreationTimeOut. '
+    required: false
+    default: true
+  abortOnChangeStepTimeout:
+    description: 'This value will be used to resume or abort the pipeline after a timeout has occurred in case a change step is still in a pending state.'
+    required: false
+    default: true
 branding:
   icon: 'refresh-ccw'
   color: 'green'

@@ -8,13 +8,15 @@ async function createChange({
   passwd,
   jobname,
   githubContextStr,
-  changeRequestDetailsStr
+  changeRequestDetailsStr,
+  changeCreationTimeOut
 }) {
    
     console.log('Calling Change Control API to create change....');
     
     let changeRequestDetails;
     let attempts = 0;
+    changeCreationTimeOut = changeCreationTimeOut * 1000;
 
     try {
       changeRequestDetails = JSON.parse(changeRequestDetailsStr);
@@ -67,11 +69,15 @@ async function createChange({
                 'Accept': 'application/json',
                 'Authorization': 'Basic ' + `${encodedToken}`
             };
-            let httpHeaders = { headers: defaultHeaders };
+            let httpHeaders = { headers: defaultHeaders,  timeout: changeCreationTimeOut };
             response = await axios.post(postendpoint, JSON.stringify(payload), httpHeaders);
             status = true;
             break;
         } catch (err) {
+            if (err.code === 'ECONNABORTED') {
+                throw new Error(`change creation timeout after ${err.config.timeout}s`);
+            }
+
             if (err.message.includes('ECONNREFUSED') || err.message.includes('ENOTFOUND')) {
                 throw new Error('Invalid ServiceNow Instance URL. Please correct the URL and try again.');
             }

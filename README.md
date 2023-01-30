@@ -28,7 +28,7 @@ deploy:
     runs-on: ubuntu-latest
     steps:     
       - name: ServiceNow Change
-        uses: ServiceNow/servicenow-devops-change@v1.34.2
+        uses: ServiceNow/servicenow-devops-change@v1.38.0
         with:
           devops-integration-user-name: ${{ secrets.SN_DEVOPS_USER }}
           devops-integration-user-password: ${{ secrets.SN_DEVOPS_PASSWORD }}
@@ -39,6 +39,11 @@ deploy:
           change-request: '{"setCloseCode":"true","attributes":{"short_description":"Automated Software Deployment","description":"Automated Software Deployment.","assignment_group":"a715cd759f2002002920bde8132e7018","implementation_plan":"Software update is tested and results can be found in Test Summaries Tab; When the change is approved the implementation happens automated by the CICD pipeline within the change planned start and end time window.","backout_plan":"When software fails in production, the previous software release will be re-deployed.","test_plan":"Testing if the software was successfully deployed"}}'
           interval: '100'
           timeout: '3600'
+          changeCreationTimeOut: '3600'
+          abortOnChangeCreationFailure: true
+          abortOnChangeStepTimeout: true
+
+
 ```
 The values for secrets should be setup in Step 1. Secrets should be created in Step 2.
 
@@ -79,6 +84,20 @@ The time in seconds to wait between trying the API. The default value is 100 sec
 ### `timeout`
 
 The max. time in seconds to wait until the action should fail. The default value is 3600 seconds.
+
+### `changeCreationTimeOut`
+
+The maximum time in seconds to wait for change creation. The default value is 3600 seconds.
+
+### `abortOnChangeCreationFailure`
+
+This value will be used to resume or abort the pipeline if the change is not created within the mentioned time period (changeCreationTimeOut). The default value is true seconds.
+
+### `abortOnChangeStepTimeout`
+
+This value will be used to resume or abort the pipeline if the change step is not completed within the mentioned time period (timeout). The default value is true seconds.
+
+
 
 ## Outputs
 No outputs produced.
