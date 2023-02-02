@@ -10,7 +10,8 @@ async function tryFetch({
   username,
   passwd,
   jobname,
-  githubContextStr
+  githubContextStr,
+  abortOnChangeStepTimeout
 }) {
     try {
         await doFetch({
@@ -54,8 +55,13 @@ async function tryFetch({
         await new Promise((resolve) => setTimeout(resolve, interval * 1000));
 
         if (+new Date() - start > timeout * 1000) {
-          throw new Error(`Timeout after ${timeout} seconds.`);
+          if(!abortOnChangeStepTimeout){
+             console.error('\n    \x1b[38;5;214m Timeout occured after '+timeout+' seconds but pipeline will coninue since abortOnChangeStepTimeout flag is false \x1b[38;5;214m');
+             return;
+          }
+             throw new Error(`Timeout after ${timeout} seconds.Workflow execution is aborted since abortOnChangeStepTimeout flag is true`);
         }
+
 
         await tryFetch({
           start,
@@ -66,7 +72,8 @@ async function tryFetch({
           username,
           passwd,
           jobname,
-          githubContextStr
+          githubContextStr,
+          abortOnChangeStepTimeout
         });
     }
 }
