@@ -86,20 +86,6 @@ The time in seconds to wait between trying the API. The default value is 100 sec
 
 The max. time in seconds to wait until the action should fail. The default value is 3600 seconds.
 
-### `changeCreationTimeOut`
-
-The maximum time in seconds to wait for change creation. The default value is 3600 seconds.
-
-### `abortOnChangeCreationFailure`
-
-This value will be used to resume or abort the pipeline if the change is not created within the mentioned time period (changeCreationTimeOut). The default value is true seconds.
-
-### `abortOnChangeStepTimeout`
-
-This value will be used to resume or abort the pipeline if the change step is not completed within the mentioned time period (timeout). The default value is true seconds.
-
-
-
 ## Outputs
 
 ### `change_number`
