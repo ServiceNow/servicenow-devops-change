@@ -5148,7 +5148,7 @@ async function doFetch({
   passwd,
   jobname,
   githubContextStr,
-  PrevPollChangeDetails
+  prevPollChangeDetails
 }) {
    
 
@@ -5229,7 +5229,7 @@ async function doFetch({
     
         if (responseCode == 201) {
           if (changeState == "pending_decision") {
-            if (isChangeDetailsChanged(PrevPollChangeDetails, currChangeDetails)) {
+            if (isChangeDetailsChanged(prevPollChangeDetails, currChangeDetails)) {
               console.log('\n \x1b[1m\x1b[32m' + JSON.stringify(currChangeDetails) + '\x1b[0m\x1b[0m');
             }
             throw new Error(JSON.stringify({ "statusCode": "201", "details": currChangeDetails }));
@@ -5279,7 +5279,7 @@ async function tryFetch({
   jobname,
   githubContextStr,
   abortOnChangeStepTimeout,
-  PrevPollChangeDetails
+  prevPollChangeDetails
 }) {
     try {
         await doFetch({
@@ -5289,7 +5289,7 @@ async function tryFetch({
           passwd,
           jobname,
           githubContextStr,
-          PrevPollChangeDetails
+          prevPollChangeDetails
         });
     } catch (error) {
         if (error.message == "500") {
@@ -5320,7 +5320,7 @@ async function tryFetch({
         if (errorMessage) {
           const errorObject = JSON.parse(errorMessage);
           if (errorObject && errorObject.statusCode == "201") {
-            PrevPollChangeDetails = errorObject.details;
+            prevPollChangeDetails = errorObject.details;
           }
         }
 
@@ -5347,7 +5347,7 @@ async function tryFetch({
           jobname,
           githubContextStr,
           abortOnChangeStepTimeout,
-          PrevPollChangeDetails
+          prevPollChangeDetails
         });
     }
 }
@@ -5568,7 +5568,7 @@ const main = async() => {
       abortOnChangeStepTimeout = abortOnChangeStepTimeout === undefined || abortOnChangeStepTimeout === "" ? false : (abortOnChangeStepTimeout == "true");
 
       let start = +new Date();
-      let PrevPollChangeDetails = {};
+      let prevPollChangeDetails = {};
 
       response = await tryFetch({
         start,
@@ -5581,7 +5581,7 @@ const main = async() => {
         jobname,
         githubContextStr,
         abortOnChangeStepTimeout,
-        PrevPollChangeDetails
+        prevPollChangeDetails
       });
 
       console.log('Get change status was successfull.');  

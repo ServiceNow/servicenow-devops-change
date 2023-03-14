@@ -56,7 +56,7 @@ const main = async() => {
       abortOnChangeStepTimeout = abortOnChangeStepTimeout === undefined || abortOnChangeStepTimeout === "" ? false : (abortOnChangeStepTimeout == "true");
 
       let start = +new Date();
-      let PrevPollChangeDetails = {};
+      let prevPollChangeDetails = {};
 
       response = await tryFetch({
         start,
@@ -69,7 +69,7 @@ const main = async() => {
         jobname,
         githubContextStr,
         abortOnChangeStepTimeout,
-        PrevPollChangeDetails
+        prevPollChangeDetails
       });
 
       console.log('Get change status was successfull.');  

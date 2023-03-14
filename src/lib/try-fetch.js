@@ -12,7 +12,7 @@ async function tryFetch({
   jobname,
   githubContextStr,
   abortOnChangeStepTimeout,
-  PrevPollChangeDetails
+  prevPollChangeDetails
 }) {
     try {
         await doFetch({
@@ -22,7 +22,7 @@ async function tryFetch({
           passwd,
           jobname,
           githubContextStr,
-          PrevPollChangeDetails
+          prevPollChangeDetails
         });
     } catch (error) {
         if (error.message == "500") {
@@ -53,7 +53,7 @@ async function tryFetch({
         if (errorMessage) {
           const errorObject = JSON.parse(errorMessage);
           if (errorObject && errorObject.statusCode == "201") {
-            PrevPollChangeDetails = errorObject.details;
+            prevPollChangeDetails = errorObject.details;
           }
         }
 
@@ -80,7 +80,7 @@ async function tryFetch({
           jobname,
           githubContextStr,
           abortOnChangeStepTimeout,
-          PrevPollChangeDetails
+          prevPollChangeDetails
         });
     }
 }
