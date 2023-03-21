@@ -54,8 +54,8 @@ async function tryFetch({
           const errorObject = JSON.parse(errorMessage);
           if (errorObject && errorObject.statusCode == "201") {
             prevPollChangeDetails = errorObject.details;
-          }else{
-            //throws error incase of state is 'failed' or 'error'
+          }else if(errorObject && errorObject.status == "error"){
+            //throws error incase of status is 'error'
             throw new Error(errorObject.details);
           }
         }
