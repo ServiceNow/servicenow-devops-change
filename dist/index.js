@@ -5976,7 +5976,8 @@ async function doFetch({
             throw new Error(JSON.stringify({ "statusCode": "201", "details": currChangeDetails }));
           } else if((changeState == "failed")||(changeState == "error")) {
               console.log("changeState - "+changeState+", currChangeDetails -"+currChangeDetails);
-              throw new Error(currChangeDetails);  
+              core.setFailed(currChangeDetails.details);
+              throw new Error("404");  
           } else
             throw new Error("202");
         }
