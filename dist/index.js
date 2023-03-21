@@ -5975,9 +5975,7 @@ async function doFetch({
             }
             throw new Error(JSON.stringify({ "statusCode": "201", "details": currChangeDetails }));
           } else if((changeState == "failed")||(changeState == "error")) {
-              console.log("changeState - "+changeState+", currChangeDetails -"+currChangeDetails);
-              core.setFailed(currChangeDetails.details);
-              throw new Error("404");  
+              throw new Error(JSON.stringify({ "details": currChangeDetails.details }));
           } else
             throw new Error("202");
         }
@@ -6066,6 +6064,9 @@ async function tryFetch({
           const errorObject = JSON.parse(errorMessage);
           if (errorObject && errorObject.statusCode == "201") {
             prevPollChangeDetails = errorObject.details;
+          }else{
+            //throws error incase of state is 'failed' or 'error'
+            throw new Error(errorObject.details);
           }
         }
 
