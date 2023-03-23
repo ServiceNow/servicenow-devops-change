@@ -93,6 +93,8 @@ async function doFetch({
               console.log('\n \x1b[1m\x1b[32m' + JSON.stringify(currChangeDetails) + '\x1b[0m\x1b[0m');
             }
             throw new Error(JSON.stringify({ "statusCode": "201", "details": currChangeDetails }));
+          } else if((changeState == "failed")||(changeState == "error")) {
+              throw new Error(JSON.stringify({ "status":"error","details": currChangeDetails.details }));
           } else
             throw new Error("202");
         }
