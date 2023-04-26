@@ -10,7 +10,9 @@ async function tryFetch({
   username,
   passwd,
   jobname,
-  githubContextStr
+  githubContextStr,
+  abortOnChangeStepTimeout,
+  prevPollChangeDetails
 }) {
     try {
         await doFetch({
@@ -19,7 +21,8 @@ async function tryFetch({
           username,
           passwd,
           jobname,
-          githubContextStr
+          githubContextStr,
+          prevPollChangeDetails
         });
     } catch (error) {
         if (error.message == "500") {
@@ -46,16 +49,28 @@ async function tryFetch({
           throw new Error("****Change has been created but the change is either rejected or cancelled.");
         }
 
-        if (error.message == "201") {
-          console.log('\n****Change is pending for approval decision.');
+        const errorMessage = error.message;
+        if (errorMessage) {
+          const errorObject = JSON.parse(errorMessage);
+          if (errorObject && errorObject.statusCode == "201") {
+            prevPollChangeDetails = errorObject.details;
+          }else if(errorObject && errorObject.status == "error"){
+            //throws error incase of status is 'error'
+            throw new Error(errorObject.details);
+          }
         }
 
         // Wait and then continue
         await new Promise((resolve) => setTimeout(resolve, interval * 1000));
 
         if (+new Date() - start > timeout * 1000) {
-          throw new Error(`Timeout after ${timeout} seconds.`);
+          if(!abortOnChangeStepTimeout){
+             console.error('\n    \x1b[38;5;214m Timeout occured after '+timeout+' seconds but pipeline will coninue since abortOnChangeStepTimeout flag is false \x1b[38;5;214m');
+             return;
+          }
+             throw new Error(`Timeout after ${timeout} seconds.Workflow execution is aborted since abortOnChangeStepTimeout flag is true`);
         }
+
 
         await tryFetch({
           start,
@@ -66,7 +81,9 @@ async function tryFetch({
           username,
           passwd,
           jobname,
-          githubContextStr
+          githubContextStr,
+          abortOnChangeStepTimeout,
+          prevPollChangeDetails
         });
     }
 }
