@@ -28,7 +28,7 @@ deploy:
     runs-on: ubuntu-latest
     steps:     
       - name: ServiceNow Change
-        uses: ServiceNow/servicenow-devops-change@v1.35.2
+        uses: ServiceNow/servicenow-devops-change@v1.38.0
         with:
           devops-integration-user-name: ${{ secrets.SN_DEVOPS_USER }}
           devops-integration-user-password: ${{ secrets.SN_DEVOPS_PASSWORD }}
@@ -89,11 +89,11 @@ The maximum time in seconds to wait for change creation. The default value is 36
 
 ### `abortOnChangeCreationFailure`
 
-This value will be used to resume or abort the pipeline if the change is not created within the mentioned time period (changeCreationTimeOut). The default value is true seconds.
+This value will be used to resume or abort the pipeline if the change is not created within the mentioned time period (changeCreationTimeOut). The default value is true.
 
 ### `abortOnChangeStepTimeout`
 
-This value will be used to resume or abort the pipeline if the change step is not completed within the mentioned time period (timeout). The default value is true seconds.
+This value will be used to resume or abort the pipeline if the change step is not completed within the mentioned time period (timeout). The default value is true.
 
 ## Outputs
 No outputs produced.
