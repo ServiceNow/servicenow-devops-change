@@ -6,10 +6,13 @@ inputs:
     required: true
   devops-integration-user-name:
     description: 'Devops Integration User Name'
-    required: true
+    required: false
   devops-integration-user-password:
     description: 'Devops Integration User Password'
-    required: true
+    required: false
+  devops-integration-token:
+    description: 'Devops Integration Token'
+    required: false
   tool-id:
     description: 'Orchestration Tool Id'
     required: true
