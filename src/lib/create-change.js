@@ -92,6 +92,7 @@ async function createChange({
         try {
             ++attempts;
             httpHeaders.timeout = changeCreationTimeOut;
+            payload.retryattempts = attempts;
             response = await axios.post(postendpoint, JSON.stringify(payload), httpHeaders);
             status = true;
             break;
@@ -134,10 +135,10 @@ async function createChange({
                 }
                 if (errMsg.indexOf('callbackURL') == -1)
                     throw new Error(errMsg);
-                else if (attempts >= 3) {
+                /*else if (attempts >= 3) {
                     errMsg = 'Task/Step Execution not created in ServiceNow DevOps for this job/stage ' + jobname + '. Please check Inbound Events processing details in ServiceNow instance and ServiceNow logs for more details.';
                     throw new Error(errMsg);
-                }
+                }*/
             }
             await new Promise((resolve) => setTimeout(resolve, 30000));
         }
