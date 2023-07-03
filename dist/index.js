@@ -5874,10 +5874,11 @@ async function createChange({
     else {
         throw new Error('For Basic Auth, Username and Password is mandatory for integration user authentication');
     }
-
-    while (attempts < 3) {
+    var retry = true;
+    while (retry) {
         try {
             ++attempts;
+            retry = false;
             httpHeaders.timeout = changeCreationTimeOut;
             payload.retryattempts = attempts;
             response = await axios.post(postendpoint, JSON.stringify(payload), httpHeaders);
@@ -5920,7 +5921,9 @@ async function createChange({
                         errMsg = errMsg + errors[index].message;
                     }
                 }
-                if (errMsg.indexOf('callbackURL') == -1)
+                if (errMsg.indexOf('Waiting for Inbound Event') == -1)
+                    retry = true;
+                else if (errMsg.indexOf('callbackURL') == -1)
                     throw new Error(errMsg);
                 /*else if (attempts >= 3) {
                     errMsg = 'Task/Step Execution not created in ServiceNow DevOps for this job/stage ' + jobname + '. Please check Inbound Events processing details in ServiceNow instance and ServiceNow logs for more details.';
