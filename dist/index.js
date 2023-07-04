@@ -5930,7 +5930,7 @@ async function createChange({
                     throw new Error(errMsg);
                 }*/
             }
-            await new Promise((resolve) => setTimeout(resolve, 30000));
+            //await new Promise((resolve) => setTimeout(resolve, 30000));
         }
     }
     if (status) {
