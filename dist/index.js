@@ -5315,15 +5315,14 @@ async function doFetch({
                 console.log('\n \x1b[1m\x1b[32m' + JSON.stringify(currChangeDetails) + '\x1b[0m\x1b[0m');
               }
               throw new Error("202");
-          }
-        }
-        else if (responseCode == 200) {
+          } else
+              throw new Error("201");
+        } else if (responseCode == 200) {
           if (isChangeDetailsChanged(prevPollChangeDetails, currChangeDetails)) {
             console.log('\n \x1b[1m\x1b[32m' + JSON.stringify(currChangeDetails) + '\x1b[0m\x1b[0m');
           }
           console.log('\n****Change is Approved.');
-        }
-        else
+        } else
           throw new Error("500");
 
       return true;
