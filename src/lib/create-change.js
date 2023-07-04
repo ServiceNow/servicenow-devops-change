@@ -10,12 +10,14 @@ async function createChange({
   jobname,
   githubContextStr,
   changeRequestDetailsStr,
-  changeCreationTimeOut
+  changeCreationTimeOut,
+  deploymentGateStr
 }) {
    
     console.log('Calling Change Control API to create change....');
     
     let changeRequestDetails;
+    let deploymentGateDetails;
     let attempts = 0;
     changeCreationTimeOut = changeCreationTimeOut * 1000;
 
@@ -24,6 +26,14 @@ async function createChange({
     } catch (e) {
         console.log(`Error occured with message ${e}`);
         throw new Error("Failed parsing changeRequestDetails");
+    }
+
+    try {
+        if (deploymentGateStr)
+            deploymentGateDetails = JSON.parse(deploymentGateStr);
+    } catch (e) {
+        console.log(`Error occured with message ${e}`);
+        throw new Error("Failed parsing deploymentGateDetails");
     }
 
     let githubContext;
@@ -50,6 +60,9 @@ async function createChange({
             'branchName': `${githubContext.ref_name}`,
             'changeRequestDetails': changeRequestDetails
         };
+        if (deploymentGateStr) {
+            payload.deploymentGateDetails = deploymentGateDetails;
+        }
     } catch (err) {
         console.log(`Error occured with message ${err}`);
         throw new Error("Exception preparing payload");
@@ -138,12 +151,7 @@ async function createChange({
                     retry = true;
                 else if (errMsg.indexOf('callbackURL') == -1)
                     throw new Error(errMsg);
-                /*else if (attempts >= 3) {
-                    errMsg = 'Task/Step Execution not created in ServiceNow DevOps for this job/stage ' + jobname + '. Please check Inbound Events processing details in ServiceNow instance and ServiceNow logs for more details.';
-                    throw new Error(errMsg);
-                }*/
             }
-            //await new Promise((resolve) => setTimeout(resolve, 30000));
         }
     }
     if (status) {

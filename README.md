@@ -48,6 +48,7 @@ deploy:
           changeCreationTimeOut: '3600'
           abortOnChangeCreationFailure: true
           abortOnChangeStepTimeout: true
+          deployment-gate: '{"environment":"deploymentgate","jobName":"Deploy"}'
 ```
 
 # For Basic Authentication at ServiceNow instance
