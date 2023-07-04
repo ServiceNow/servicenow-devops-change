@@ -108,17 +108,24 @@ async function doFetch({
             throw new Error(JSON.stringify({ "statusCode": "201", "details": currChangeDetails }));
           } else if((changeState == "failed")||(changeState == "error")) {
               throw new Error(JSON.stringify({ "status":"error","details": currChangeDetails.details }));
-          } else
-            throw new Error("202");
+          } else if (changeState == "rejected") {
+              if (isChangeDetailsChanged(prevPollChangeDetails, currChangeDetails)) {
+                console.log('\n \x1b[1m\x1b[32m' + JSON.stringify(currChangeDetails) + '\x1b[0m\x1b[0m');
+              }
+              throw new Error("202");
+          }
         }
-
-        if (responseCode == 200) {
-            console.log('\n****Change is Approved.');
+        else if (responseCode == 200) {
+          if (isChangeDetailsChanged(prevPollChangeDetails, currChangeDetails)) {
+            console.log('\n \x1b[1m\x1b[32m' + JSON.stringify(currChangeDetails) + '\x1b[0m\x1b[0m');
+          }
+          console.log('\n****Change is Approved.');
         }
-    } else
-        throw new Error("500");
+        else
+          throw new Error("500");
 
-    return true;
+      return true;
+    }
 }
 
 function isChangeDetailsChanged(prevPollChangeDetails, currChangeDetails) {

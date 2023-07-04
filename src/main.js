@@ -75,7 +75,6 @@ const main = async() => {
         prevPollChangeDetails
       });
 
-      console.log('Get change status was successfull.');  
     }
   } catch (error) {
     core.setFailed(error.message);
