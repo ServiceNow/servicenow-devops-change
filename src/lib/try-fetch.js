@@ -9,6 +9,7 @@ async function tryFetch({
   toolId,
   username,
   passwd,
+  token,
   jobname,
   githubContextStr,
   abortOnChangeStepTimeout,
@@ -20,6 +21,7 @@ async function tryFetch({
           toolId,
           username,
           passwd,
+          token,
           jobname,
           githubContextStr,
           prevPollChangeDetails
@@ -80,6 +82,7 @@ async function tryFetch({
           toolId,
           username,
           passwd,
+          token,
           jobname,
           githubContextStr,
           abortOnChangeStepTimeout,
