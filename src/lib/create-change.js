@@ -147,9 +147,11 @@ async function createChange({
                         errMsg = errMsg + errors[index].message;
                     }
                 }
-                if (errMsg.indexOf('Waiting for Inbound Event') == -1)
+                if (errMsg.indexOf('Waiting for Inbound Event') == -1) {
                     retry = true;
-                else if (errMsg.indexOf('callbackURL') == -1)
+                } else if (attempts >= 3) {
+                    retry = false;
+                } else if (errMsg.indexOf('callbackURL') == -1) {
                     throw new Error(errMsg);
             }
         }
