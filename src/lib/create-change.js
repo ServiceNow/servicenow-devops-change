@@ -6,15 +6,18 @@ async function createChange({
   toolId,
   username,
   passwd,
+  token,
   jobname,
   githubContextStr,
   changeRequestDetailsStr,
-  changeCreationTimeOut
+  changeCreationTimeOut,
+  deploymentGateStr
 }) {
    
     console.log('Calling Change Control API to create change....');
     
     let changeRequestDetails;
+    let deploymentGateDetails;
     let attempts = 0;
     changeCreationTimeOut = changeCreationTimeOut * 1000;
 
@@ -23,6 +26,14 @@ async function createChange({
     } catch (e) {
         console.log(`Error occured with message ${e}`);
         throw new Error("Failed parsing changeRequestDetails");
+    }
+
+    try {
+        if (deploymentGateStr)
+            deploymentGateDetails = JSON.parse(deploymentGateStr);
+    } catch (e) {
+        console.log(`Error occured with message ${e}`);
+        throw new Error("Failed parsing deploymentGateDetails");
     }
 
     let githubContext;
@@ -49,27 +60,53 @@ async function createChange({
             'branchName': `${githubContext.ref_name}`,
             'changeRequestDetails': changeRequestDetails
         };
+        if (deploymentGateStr) {
+            payload.deploymentGateDetails = deploymentGateDetails;
+        }
     } catch (err) {
         console.log(`Error occured with message ${err}`);
         throw new Error("Exception preparing payload");
     }
 
-    const postendpoint = `${instanceUrl}/api/sn_devops/devops/orchestration/changeControl?toolId=${toolId}&toolType=github_server`;
+    let postendpoint = '';
     let response;
+    let httpHeaders = {};
     let status = false;
 
-    while (attempts < 3) {
+    if(token === '' && username === '' && passwd === '') {
+        throw new Error('Either secret token or integration username, password is needed for integration user authentication');
+    }
+    else if(token !== '') {
+        postendpoint =  `${instanceUrl}/api/sn_devops/v2/devops/orchestration/changeControl?toolId=${toolId}&toolType=github_server`;
+        const defaultHeadersForToken = {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'Authorization': 'sn_devops.DevOpsToken '+`${toolId}:${token}`
+        };
+        httpHeaders = { headers: defaultHeadersForToken };
+    }
+    else if(username !== '' && passwd !== '') {
+        postendpoint = `${instanceUrl}/api/sn_devops/v1/devops/orchestration/changeControl?toolId=${toolId}&toolType=github_server`;
+        const tokenBasicAuth = `${username}:${passwd}`;
+        const encodedTokenForBasicAuth = Buffer.from(tokenBasicAuth).toString('base64');
+
+        const defaultHeadersForBasicAuth = {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'Authorization': 'Basic ' + `${encodedTokenForBasicAuth}`
+        };
+        httpHeaders = { headers: defaultHeadersForBasicAuth };
+    }
+    else {
+        throw new Error('For Basic Auth, Username and Password is mandatory for integration user authentication');
+    }
+    var retry = true;
+    while (retry) {
         try {
             ++attempts;
-            const token = `${username}:${passwd}`;
-            const encodedToken = Buffer.from(token).toString('base64');
-
-            const defaultHeaders = {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-                'Authorization': 'Basic ' + `${encodedToken}`
-            };
-            let httpHeaders = { headers: defaultHeaders,  timeout: changeCreationTimeOut };
+            retry = false;
+            httpHeaders.timeout = changeCreationTimeOut;
+            payload.retryattempts = attempts;
             response = await axios.post(postendpoint, JSON.stringify(payload), httpHeaders);
             status = true;
             break;
@@ -110,14 +147,13 @@ async function createChange({
                         errMsg = errMsg + errors[index].message;
                     }
                 }
-                if (errMsg.indexOf('callbackURL') == -1)
+                if (errMsg.indexOf('Waiting for Inbound Event') == -1) {
+                    retry = true;
+                } else if (attempts >= 3) {
+                    retry = false;
+                } else if (errMsg.indexOf('callbackURL') == -1) {
                     throw new Error(errMsg);
-                else if (attempts >= 3) {
-                    errMsg = 'Task/Step Execution not created in ServiceNow DevOps for this job/stage ' + jobname + '. Please check Inbound Events processing details in ServiceNow instance and ServiceNow logs for more details.';
-                    throw new Error(errMsg);
-                }
             }
-            await new Promise((resolve) => setTimeout(resolve, 30000));
         }
     }
     if (status) {

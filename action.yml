@@ -6,10 +6,13 @@ inputs:
     required: true
   devops-integration-user-name:
     description: 'Devops Integration User Name'
-    required: true
+    required: false
   devops-integration-user-password:
     description: 'Devops Integration User Password'
-    required: true
+    required: false
+  devops-integration-token:
+    description: 'Devops Integration Token'
+    required: false
   tool-id:
     description: 'Orchestration Tool Id'
     required: true
@@ -42,9 +45,12 @@ inputs:
     description: 'This value will be used to resume or abort the pipeline after a timeout has occurred in case a change step is still in a pending state.'
     required: false
     default: true
+  deployment-gate:
+    description: 'The customized inputs to process deployment gate job related change.'
+    required: false
 branding:
   icon: 'refresh-ccw'
   color: 'green'
 runs: 
-  using: 'node12'
+  using: 'node16'
   main: 'dist/index.js'
