@@ -45,6 +45,9 @@ inputs:
     description: 'This value will be used to resume or abort the pipeline after a timeout has occurred in case a change step is still in a pending state.'
     required: false
     default: true
+  deployment-gate:
+    description: 'The customized inputs to process deployment gate job related change.'
+    required: false
 branding:
   icon: 'refresh-ccw'
   color: 'green'
