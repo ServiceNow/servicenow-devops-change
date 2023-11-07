@@ -101,7 +101,7 @@ async function doFetch({
     let changeState = currChangeDetails.status;
 
    
-    core.setOutput('results',cucurrChangeDetails);
+    core.setOutput('results',JSON.stringify(cucurrChangeDetails));
 
     if (responseCode == 201) {
       if (changeState == "pending_decision") {
