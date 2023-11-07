@@ -100,6 +100,9 @@ async function doFetch({
     let currChangeDetails = changeStatus.details;
     let changeState = currChangeDetails.status;
 
+   
+    core.setOutput('results',cucurrChangeDetails);
+
     if (responseCode == 201) {
       if (changeState == "pending_decision") {
         if (isChangeDetailsChanged(prevPollChangeDetails, currChangeDetails)) {
