@@ -46,8 +46,8 @@ inputs:
     required: false
     default: 'true'
 outputs:
-  results: 
-    description: 'Change Details Response'
+  change-request-number: 
+    description: 'Change request number.'
   
 branding:
   icon: 'refresh-ccw'
