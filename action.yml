@@ -47,7 +47,7 @@ inputs:
     default: 'true'
 outputs:
   change-request-number: 
-    description: 'Change request number.'
+    description: 'The change request number is provided upon successful creation of the change.'
   
 branding:
   icon: 'refresh-ccw'
