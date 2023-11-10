@@ -40,11 +40,15 @@ inputs:
   abortOnChangeCreationFailure:
     description: 'This value will be used to resume or abort the pipeline if the change is not created within the mentioned time period in changeCreationTimeOut. '
     required: false
-    default: true
+    default: 'true'
   abortOnChangeStepTimeout:
     description: 'This value will be used to resume or abort the pipeline after a timeout has occurred in case a change step is still in a pending state.'
     required: false
-    default: true
+    default: 'true'
+outputs:
+  change-request-number: 
+    description: 'The change request number is provided upon successful creation of the change.'
+  
 branding:
   icon: 'refresh-ccw'
   color: 'green'

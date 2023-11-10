@@ -35,7 +35,8 @@ deploy:
     runs-on: ubuntu-latest
     steps:     
       - name: ServiceNow Change
-        uses: ServiceNow/servicenow-devops-change@v2.0
+        uses: ServiceNow/servicenow-devops-change@v3.1
+        id: create
         with:
           devops-integration-token: ${{ secrets.SN_DEVOPS_INTEGRATION_TOKEN }}
           instance-url: ${{ secrets.SN_INSTANCE_URL }}
@@ -48,6 +49,8 @@ deploy:
           changeCreationTimeOut: '3600'
           abortOnChangeCreationFailure: true
           abortOnChangeStepTimeout: true
+      - name: Output of Change Creation
+        run: echo "change-request-number = ${{ steps.create.outputs.change-request-number }}" >> $GITHUB_OUTPUT
 ```
 
 # For Basic Authentication at ServiceNow instance
@@ -58,7 +61,8 @@ deploy:
     runs-on: ubuntu-latest
     steps:     
       - name: ServiceNow Change
-        uses: ServiceNow/servicenow-devops-change@v1.38.0
+        uses: ServiceNow/servicenow-devops-change@v3.1
+        id: create
         with:
           devops-integration-user-name: ${{ secrets.SN_DEVOPS_USER }}
           devops-integration-user-password: ${{ secrets.SN_DEVOPS_PASSWORD }}
@@ -72,6 +76,9 @@ deploy:
           changeCreationTimeOut: '3600'
           abortOnChangeCreationFailure: true
           abortOnChangeStepTimeout: true
+      - name: Output of Change Creation
+        run: echo "change-request-number = ${{ steps.create.outputs.change-request-number }}" >> $GITHUB_OUTPUT
+
 ```
 The values for secrets should be setup in Step 1. Secrets should be created in Step 2.
 
@@ -130,7 +137,10 @@ This value will be used to resume or abort the pipeline if the change is not cre
 This value will be used to resume or abort the pipeline if the change step is not completed within the mentioned time period (timeout). The default value is true.
 
 ## Outputs
-No outputs produced.
+
+### `change-request-number`
+
+This change request number is provided as output upon successful creation of the change.
 
 # Notices
 
