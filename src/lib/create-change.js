@@ -88,6 +88,7 @@ async function createChange({
         throw new Error('For Basic Auth, Username and Password is mandatory for integration user authentication');
     }
 
+    core.debug("[ServiceNow DevOps], Sending Request for Create Change, Request Header :"+JSON.stringify(httpHeaders)+", Payload :"+JSON.stringify(payload)+"\n");
     var retry = true;
     while (retry) {
         try {
