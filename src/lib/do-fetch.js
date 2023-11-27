@@ -66,6 +66,11 @@ async function doFetch({
     }
 
     if (err.response.status == 400) {
+      let responseData = err.response.data;
+      if (responseData && responseData.result && responseData.result.errorMessage) {//Other technical error messages
+          let errMsg = responseData.result.errorMessage;
+          throw new Error(JSON.stringify({ "status":"error","details": errMsg }));
+      }
       throw new Error("400");
     }
 
