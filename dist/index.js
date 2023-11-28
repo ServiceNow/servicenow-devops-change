@@ -6022,7 +6022,6 @@ async function doFetch({
       let responseData = err.response.data;
       if (responseData && responseData.result && responseData.result.errorMessage) {//Other technical error messages
           let errMsg = responseData.result.errorMessage;
-          console.log('Error message from do_fetch.js :'+errMsg);
           throw new Error(JSON.stringify({ "status":"error","details": errMsg }));
       }
       throw new Error("400");
