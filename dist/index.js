@@ -6024,6 +6024,7 @@ async function doFetch({
           let errMsg = responseData.result.errorMessage;
           throw new Error(JSON.stringify({ "status":"error","details": errMsg }));
       }
+
       throw new Error("400");
     }
 
