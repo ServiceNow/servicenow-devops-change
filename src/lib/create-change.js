@@ -144,7 +144,6 @@ async function createChange({
                 if (errMsg.indexOf('Waiting for Inbound Event') == -1)
                     retry = true;
                 else if (errMsg.indexOf('callbackURL') == -1)
-                    console.log('Error message has been thrown from here :'+errMsg);
                     throw new Error(errMsg);
             }
         }
