@@ -5915,11 +5915,17 @@ async function createChange({
                 let responseData = err.response.data;
                 if (responseData && responseData.error && responseData.error.message) {
                     errMsg = responseData.error.message;
-                } else if (responseData && responseData.result && responseData.result.details && responseData.result.details.errors) {
-                    errMsg = 'ServiceNow DevOps Change is not created. ';
-                    let errors = err.response.data.result.details.errors;
-                    for (var index in errors) {
-                        errMsg = errMsg + errors[index].message;
+                } else if (responseData && responseData.result) {
+                    let result=responseData.result;
+                    if(result.details && result.details.errors){
+                        errMsg = 'ServiceNow DevOps Change is not created. ';
+                        let errors = err.response.data.result.details.errors;
+                        for (var index in errors) {
+                            errMsg = errMsg + errors[index].message;
+                        }
+                    }
+                    else if(result.errorMessage){
+                        errMsg=result.errorMessage;
                     }
                 }
                 if (errMsg.indexOf('Waiting for Inbound Event') == -1)
@@ -6012,6 +6018,12 @@ async function doFetch({
     }
 
     if (err.response.status == 400) {
+      let responseData = err.response.data;
+      if (responseData && responseData.result && responseData.result.errorMessage) {//Other technical error messages
+          let errMsg = responseData.result.errorMessage;
+          throw new Error(JSON.stringify({ "status":"error","details": errMsg }));
+      }
+
       throw new Error("400");
     }
 
