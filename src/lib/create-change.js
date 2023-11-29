@@ -1,6 +1,20 @@
 const core = require('@actions/core');
 const axios = require('axios');
 
+function circularSafeStringify(obj) {
+    const seen = new WeakSet();
+    return JSON.stringify(obj, (key, value) => {
+        if (key === '_sessionCache') return undefined;
+        if (typeof value === 'object' && value !== null) {
+        if (seen.has(value)) {
+          return '[Circular]';
+        }
+        seen.add(value);
+      }
+      return value;
+    });
+}
+
 async function createChange({
   instanceUrl,
   toolId,
@@ -145,6 +159,9 @@ async function createChange({
                     retry = true;
                 else if (errMsg.indexOf('callbackURL') == -1)
                     throw new Error(errMsg);
+            }
+            if(!retry){
+                core.debug("[ServiceNow DevOps], Receiving response for Create Change, Response :"+circularSafeStringify(response)+"\n");
             }
         }
     }
