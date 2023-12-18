@@ -45,6 +45,12 @@ inputs:
     description: 'This value will be used to resume or abort the pipeline after a timeout has occurred in case a change step is still in a pending state.'
     required: false
     default: 'true'
+  snapshot-name:
+    description: 'The snapshot name.'
+    required: false
+  application-name:
+    description: 'The application name.'
+    required: false
 outputs:
   change-request-number: 
     description: 'The change request number is provided upon successful creation of the change.'

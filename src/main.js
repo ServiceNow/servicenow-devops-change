@@ -11,7 +11,8 @@ const main = async() => {
     const passwd = core.getInput('devops-integration-user-password', { required: false });
     const token = core.getInput('devops-integration-token', { required: false });
     const jobname = core.getInput('job-name', { required: true });
-
+    const snapshotName = core.getInput('snapshot-name', { required: false });
+    const applicationName = core.getInput('application-name', { required: false });
     let changeRequestDetailsStr = core.getInput('change-request', { required: true });
     let githubContextStr = core.getInput('context-github', { required: true });
 
@@ -33,7 +34,9 @@ const main = async() => {
         jobname,
         githubContextStr,
         changeRequestDetailsStr,
-        changeCreationTimeOut
+        changeCreationTimeOut,
+        snapshotName,
+        applicationName
       });
     } catch (err) {
       if (abortOnChangeCreationFailure) {

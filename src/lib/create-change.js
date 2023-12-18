@@ -24,7 +24,9 @@ async function createChange({
   jobname,
   githubContextStr,
   changeRequestDetailsStr,
-  changeCreationTimeOut
+  changeCreationTimeOut,
+  snapshotName,
+  applicationName
 }) {
    
     console.log('Calling Change Control API to create change....');
@@ -62,7 +64,9 @@ async function createChange({
             'workflow': `${githubContext.workflow}`,
             'repository': `${githubContext.repository}`,
             'branchName': `${githubContext.ref_name}`,
-            'changeRequestDetails': changeRequestDetails
+            'changeRequestDetails': changeRequestDetails,
+            'snapshotName': snapshotName,
+            'applicationName': applicationName
         };
     } catch (err) {
         console.log(`Error occured with message ${err}`);
