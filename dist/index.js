@@ -6037,8 +6037,8 @@ async function doFetch({
     if (err.response.status == 400) {
       let responseData = err.response.data;
       if (responseData && responseData.result && responseData.result.errorMessage) {//Other technical error messages
-          let errMsg = responseData.result.errorMessage;
-          throw new Error(JSON.stringify({ "status":"error","details": errMsg }));
+        let errMsg = responseData.result.errorMessage;
+        throw new Error(JSON.stringify({ "status": "error", "details": errMsg }));
       }
 
       throw new Error("400");
@@ -6075,8 +6075,12 @@ async function doFetch({
     let currChangeDetails = changeStatus.details;
     let changeState = currChangeDetails.status;
 
-   if(currChangeDetails && currChangeDetails.number)
-      core.setOutput('change-request-number', currChangeDetails.number);
+    if (currChangeDetails) {
+      if (currChangeDetails.number)
+        core.setOutput('change-request-number', currChangeDetails.number);
+      if(currChangeDetails.sys_id)
+        core.setOutput('change-request-sys-id', currChangeDetails.sys_id);
+    }
 
     if (responseCode == 201) {
       if (changeState == "pending_decision") {
@@ -6099,11 +6103,11 @@ async function doFetch({
       }
       console.log('\n****Change is Approved.');
     }
-}
-    else
-      throw new Error("500");
-      
-    return true;
+  }
+  else
+    throw new Error("500");
+
+  return true;
 }
 
 function isChangeDetailsChanged(prevPollChangeDetails, currChangeDetails) {

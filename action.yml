@@ -48,7 +48,8 @@ inputs:
 outputs:
   change-request-number: 
     description: 'The change request number is provided upon successful creation of the change.'
-  
+  change-request-sys-id: 
+    description: 'The change request  sys id is provided upon successful creation of the change.'
 branding:
   icon: 'refresh-ccw'
   color: 'green'
