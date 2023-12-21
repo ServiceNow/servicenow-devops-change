@@ -142,6 +142,10 @@ This value will be used to resume or abort the pipeline if the change step is no
 
 This change request number is provided as output upon successful creation of the change.
 
+### `change-request-sys-id`
+
+This change request sys id is provided as output upon successful creation of the change.
+
 # Notices
 
 ## Support Model
