@@ -11,7 +11,7 @@ This custom action needs to be added at step level in a job to create change in 
 ## Step 2: Configure Secrets in your GitHub Ogranization or GitHub repository
 On GitHub, go in your organization settings or repository settings, click on the _Secrets > Actions_ and create a new secret.
 
-For token based authentication which is available from v2.0, create secrets called 
+For token based authentication which is available from v3.0.0, create secrets called 
 - `SN_DEVOPS_INTEGRATION_TOKEN` required for token based authentication
 - `SN_INSTANCE_URL` your ServiceNow instance URL, for example **https://test.service-now.com**
 - `SN_ORCHESTRATION_TOOL_ID` only the **sys_id** is required for the GitHub tool created in your ServiceNow instance
@@ -27,7 +27,7 @@ Use needs to configure the identified upstream job. See [test.yml](.github/workf
 
 ## Step 4: Configure the GitHub Action if need to adapt for your needs or workflows
 
-# For Token based Authentication which is available from v2.0 at ServiceNow instance
+# For Token based Authentication which is available from v3.0.0 at ServiceNow instance
 ```yaml
 deploy:
     name: Deploy
@@ -35,7 +35,7 @@ deploy:
     runs-on: ubuntu-latest
     steps:     
       - name: ServiceNow Change
-        uses: ServiceNow/servicenow-devops-change@v3.1
+        uses: ServiceNow/servicenow-devops-change@v3.0.0
         id: create
         with:
           devops-integration-token: ${{ secrets.SN_DEVOPS_INTEGRATION_TOKEN }}
@@ -49,6 +49,7 @@ deploy:
           changeCreationTimeOut: '3600'
           abortOnChangeCreationFailure: true
           abortOnChangeStepTimeout: true
+          deployment-gate: '{"environment":"deploymentgate","jobName":"Deploy"}'
       - name: Output of Change Creation
         run: echo "change-request-number = ${{ steps.create.outputs.change-request-number }}" >> $GITHUB_OUTPUT
 ```
@@ -61,8 +62,7 @@ deploy:
     runs-on: ubuntu-latest
     steps:     
       - name: ServiceNow Change
-        uses: ServiceNow/servicenow-devops-change@v3.1
-        id: create
+        uses: ServiceNow/servicenow-devops-change@v3.0.0
         with:
           devops-integration-user-name: ${{ secrets.SN_DEVOPS_USER }}
           devops-integration-user-password: ${{ secrets.SN_DEVOPS_PASSWORD }}
@@ -90,11 +90,11 @@ The values for secrets should be setup in Step 1. Secrets should be created in S
 
 ### `devops-integration-user-name`
 
-**Optional**  DevOps Integration Username to ServiceNow instance. 
+**Required**  DevOps Integration Username to ServiceNow instance. 
 
 ### `devops-integration-user-password`
 
-**Optional**  DevOps Integration User Password to ServiceNow instance. 
+**Required**  DevOps Integration User Password to ServiceNow instance. 
 
 ### `instance-url`
 
@@ -114,7 +114,7 @@ The values for secrets should be setup in Step 1. Secrets should be created in S
 
 ### `change-request`
 
-The change request details to be used while creating change in ServiceNow instance. The change request is a JSON object surrounded by curly braces _{}_ containing key-value pair separated by a comma _,_. A key-value pair consists of a key and a value separated by a colon _:_. The keys supported in key-value pair are *setCloseCode*, *short_description*, *description*, *assignment_group*, *implementation_plan*, *backout_plan*, *test_plan* etc.
+The change request details to be used while creating change in ServiceNow instance. The change request is a JSON object surrounded by curly braces _{}_ containing key-value pair separated by a comma _,_. A key-value pair consists of a key and a value separated by a colon _:_. The keys supported in key-value pair are *setCloseCode*, *short_description*, *description*, *assignment_group*, *implementation_plan*, *backout_plan*, *test_plan*
 
 ### `interval`
 
@@ -130,11 +130,11 @@ The maximum time in seconds to wait for change creation. The default value is 36
 
 ### `abortOnChangeCreationFailure`
 
-This value will be used to resume or abort the pipeline if the change is not created within the mentioned time period (changeCreationTimeOut). The default value is true.
+This value will be used to resume or abort the pipeline if the change is not created within the mentioned time period (changeCreationTimeOut). The default value is true seconds.
 
 ### `abortOnChangeStepTimeout`
 
-This value will be used to resume or abort the pipeline if the change step is not completed within the mentioned time period (timeout). The default value is true.
+This value will be used to resume or abort the pipeline if the change step is not completed within the mentioned time period (timeout). The default value is true seconds.
 
 ## Outputs
 

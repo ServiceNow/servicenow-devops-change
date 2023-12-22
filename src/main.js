@@ -11,6 +11,7 @@ const main = async() => {
     const passwd = core.getInput('devops-integration-user-password', { required: false });
     const token = core.getInput('devops-integration-token', { required: false });
     const jobname = core.getInput('job-name', { required: true });
+    const deploymentGateStr = core.getInput('deployment-gate', { required: false });
 
     let changeRequestDetailsStr = core.getInput('change-request', { required: true });
     let githubContextStr = core.getInput('context-github', { required: true });
@@ -33,7 +34,8 @@ const main = async() => {
         jobname,
         githubContextStr,
         changeRequestDetailsStr,
-        changeCreationTimeOut
+        changeCreationTimeOut,
+        deploymentGateStr
       });
     } catch (err) {
       if (abortOnChangeCreationFailure) {
@@ -46,6 +48,9 @@ const main = async() => {
         return;
       }
     }
+
+    if (deploymentGateStr)
+      status = false; //do not poll to check for deployment gate feature
 
     if (status) {
       let timeout = parseInt(core.getInput('timeout') || 100);
