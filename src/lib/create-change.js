@@ -167,10 +167,8 @@ async function createChange({
                         errMsg = result.errorMessage;
                     }
                 }
-                if (errMsg.indexOf('Waiting for Inbound Event') == -1) {
+                if (attempts <= 3) {
                     retry = true;
-                } else if (attempts >= 3) {
-                    retry = false;
                 } else if (errMsg.indexOf('callbackURL') == -1) {
                     throw new Error(errMsg);
                 }
