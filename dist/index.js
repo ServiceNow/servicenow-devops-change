@@ -5954,8 +5954,8 @@ async function createChange({
                         errMsg = result.errorMessage;
                     }
                 }
-                if (attempts >= 3) {
-                    retry = false;
+                if (attempts <= 3) {
+                    retry = true;
                 } else if (errMsg.indexOf('callbackURL') == -1) {
                     throw new Error(errMsg);
                 }
