@@ -1,6 +1,20 @@
 const core = require('@actions/core');
 const axios = require('axios');
 
+function circularSafeStringify(obj) {
+    const seen = new WeakSet();
+    return JSON.stringify(obj, (key, value) => {
+        if (key === '_sessionCache') return undefined;
+        if (typeof value === 'object' && value !== null) {
+            if (seen.has(value)) {
+                return '[Circular]';
+            }
+            seen.add(value);
+        }
+        return value;
+    });
+}
+
 async function createChange({
     instanceUrl,
     toolId,
@@ -70,7 +84,6 @@ async function createChange({
 
     let postendpoint = '';
     let response;
-    let httpHeaders = {};
     let status = false;
 
     if (token === '' && username === '' && passwd === '') {
@@ -101,6 +114,7 @@ async function createChange({
         throw new Error('For Basic Auth, Username and Password is mandatory for integration user authentication');
     }
     var retry = true;
+    core.debug("[ServiceNow DevOps], Sending Request for Create Change, Request Header :" + JSON.stringify(httpHeaders) + ", Payload :" + JSON.stringify(payload) + "\n");
     while (retry) {
         try {
             ++attempts;
@@ -140,20 +154,28 @@ async function createChange({
                 let responseData = err.response.data;
                 if (responseData && responseData.error && responseData.error.message) {
                     errMsg = responseData.error.message;
-                } else if (responseData && responseData.result && responseData.result.details && responseData.result.details.errors) {
-                    errMsg = 'ServiceNow DevOps Change is not created. ';
-                    let errors = err.response.data.result.details.errors;
-                    for (var index in errors) {
-                        errMsg = errMsg + errors[index].message;
+                } else if (responseData && responseData.result) {
+                    let result = responseData.result;
+                    if (result.details && result.details.errors) {
+                        errMsg = 'ServiceNow DevOps Change is not created. ';
+                        let errors = err.response.data.result.details.errors;
+                        for (var index in errors) {
+                            errMsg = errMsg + errors[index].message;
+                        }
+                    }
+                    else if (result.errorMessage) {
+                        errMsg = result.errorMessage;
                     }
                 }
-                if (errMsg.indexOf('Waiting for Inbound Event') == -1) {
+                if (attempts <= 3) {
                     retry = true;
-                } else if (attempts >= 3) {
-                    retry = false;
                 } else if (errMsg.indexOf('callbackURL') == -1) {
                     throw new Error(errMsg);
                 }
+                if (!retry) {
+                    core.debug("[ServiceNow DevOps], Receiving response for Create Change, Response :" + circularSafeStringify(response) + "\n");
+                }
+                await new Promise((resolve) => setTimeout(resolve, 30000));
             }
         }
         if (status) {
@@ -164,5 +186,4 @@ async function createChange({
         }
     }
 }
-
 module.exports = { createChange };

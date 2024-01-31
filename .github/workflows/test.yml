@@ -34,7 +34,8 @@ jobs:
 
     steps:     
       - name: ServiceNow Change Approval
-        uses: ServiceNow/servicenow-devops-change@v2.0.0
+        uses: ServiceNow/servicenow-devops-change@v3.1.0
+        id: create
         with:
           devops-integration-user-name: ${{ secrets.SN_DEVOPS_USER }}
           devops-integration-user-password: ${{ secrets.SN_DEVOPS_PASSWORD }}
@@ -48,7 +49,8 @@ jobs:
           changeCreationTimeOut: '3600'
           abortOnChangeCreationFailure: true
           abortOnChangeStepTimeout: true
-`
+      - name: Output of Change Creation
+        run: echo "change-request-number = ${{ steps.create.outputs.change-request-number }} and change-request-sys-id = ${{ steps.create.outputs.change-request-sys-id }} " >> $GITHUB_OUTPUT
     
   deploy:
     name: Deploy
