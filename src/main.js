@@ -34,7 +34,6 @@ const main = async() => {
         jobname,
         githubContextStr,
         changeRequestDetailsStr,
-        changeCreationTimeOut,
         deploymentGateStr
       });
     } catch (err) {
