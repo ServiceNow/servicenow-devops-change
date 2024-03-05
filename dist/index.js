@@ -6103,7 +6103,7 @@ async function doFetch({
               }
               throw new Error("202");
           } else
-              throw new Error("ChangeNotCreated_RedoPolling");
+              throw new Error("201");
       }
       else if (responseCode == 200) { //incase of change created and in implemented state
           if (isChangeDetailsChanged(prevPollChangeDetails, currChangeDetails)) {
