@@ -53,16 +53,17 @@ const main = async() => {
       status = false; //do not poll to check for deployment gate feature
 
     if (status) {
-      let timeout = parseInt(core.getInput('timeout') || 100);
-      let interval = parseInt(core.getInput('interval') || 3600);
+      let timeout = parseInt(core.getInput('timeout') || 3600);
+      let interval = parseInt(core.getInput('interval') || 100);
 
       interval = interval>=100 ? interval : 100;
-      timeout = timeout>=100? timeout : 3600;
+      timeout = timeout>=3600? timeout : 3600;
 
       let abortOnChangeStepTimeout = core.getInput('abortOnChangeStepTimeout');
       abortOnChangeStepTimeout = abortOnChangeStepTimeout === undefined || abortOnChangeStepTimeout === "" ? false : (abortOnChangeStepTimeout == "true");
 
       let start = +new Date();
+      let changeCreationStartTime = +new Date();
       let prevPollChangeDetails = {};
 
       response = await tryFetch({
@@ -77,7 +78,10 @@ const main = async() => {
         jobname,
         githubContextStr,
         abortOnChangeStepTimeout,
-        prevPollChangeDetails
+        prevPollChangeDetails,
+        changeCreationTimeOut,
+        abortOnChangeCreationFailure,
+        changeCreationStartTime
       });
 
     }

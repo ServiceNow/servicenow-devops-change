@@ -1,20 +1,6 @@
 const core = require('@actions/core');
 const axios = require('axios');
 
-function circularSafeStringify(obj) {
-    const seen = new WeakSet();
-    return JSON.stringify(obj, (key, value) => {
-        if (key === '_sessionCache') return undefined;
-        if (typeof value === 'object' && value !== null) {
-            if (seen.has(value)) {
-                return '[Circular]';
-            }
-            seen.add(value);
-        }
-        return value;
-    });
-}
-
 async function createChange({
     instanceUrl,
     toolId,
@@ -32,8 +18,11 @@ async function createChange({
 
     let changeRequestDetails;
     let deploymentGateDetails;
-    let attempts = 0;
-    changeCreationTimeOut = changeCreationTimeOut * 1000;
+    let githubContext;
+    let payload;
+    let postendpoint = '';
+    let response;
+    let status = false;
 
     try {
         changeRequestDetails = JSON.parse(changeRequestDetailsStr);
@@ -50,16 +39,12 @@ async function createChange({
         throw new Error("Failed parsing deploymentGateDetails");
     }
 
-    let githubContext;
-
     try {
         githubContext = JSON.parse(githubContextStr);
     } catch (e) {
         console.log(`Error occured with message ${e}`);
         throw new Error("Exception parsing github context");
     }
-
-    let payload;
 
     try {
         payload = {
@@ -81,10 +66,6 @@ async function createChange({
         console.log(`Error occured with message ${err}`);
         throw new Error("Exception preparing payload");
     }
-
-    let postendpoint = '';
-    let response;
-    let status = false;
 
     if (token === '' && username === '' && passwd === '') {
         throw new Error('Either secret token or integration username, password is needed for integration user authentication');
@@ -180,11 +161,15 @@ async function createChange({
                 await new Promise((resolve) => setTimeout(resolve, 30000));
             }
         }
-        if (status) {
-            var result = response.data.result;
-            if (result && result.message) {
+    }
+    
+    if (status) {
+        var result = response.data.result;
+        if (result && result.status == "Success") {
+            if(result.message)
                 console.log('\n     \x1b[1m\x1b[36m' + result.message + '\x1b[0m\x1b[0m');
-            }
+            else
+                console.log('\n     \x1b[1m\x1b[36m' + "The job is under change control. A callback request is created and polling has been started to retrieve the change info." + '\x1b[0m\x1b[0m');
         }
     }
 }
