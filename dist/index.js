@@ -6085,6 +6085,10 @@ async function doFetch({
           core.setOutput('change-request-sys-id', currChangeDetails.sys_id);
       }
 
+      /**
+       * 1. incase of change not created
+       * 2. incase of change created and not in implement state
+       */
       if (responseCode == 201) {
           if (changeState == "pending_decision") {
               if (isChangeDetailsChanged(prevPollChangeDetails, currChangeDetails)) {
@@ -6099,9 +6103,9 @@ async function doFetch({
               }
               throw new Error("202");
           } else
-              throw new Error("201");
+              throw new Error("ChangeNotCreated_RedoPolling");
       }
-      else if (responseCode == 200) {
+      else if (responseCode == 200) { //incase of change created and in implemented state
           if (isChangeDetailsChanged(prevPollChangeDetails, currChangeDetails)) {
             console.log('\n \x1b[1m\x1b[32m' + JSON.stringify(currChangeDetails) + '\x1b[0m\x1b[0m');
           }
