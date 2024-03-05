@@ -5961,7 +5961,9 @@ async function doFetch({
   token,
   jobname,
   githubContextStr,
-  prevPollChangeDetails
+  prevPollChangeDetails,
+  changeCreationTimeOut,
+  abortOnChangeCreationFailure
 }) {
 
 
@@ -6097,7 +6099,7 @@ async function doFetch({
               }
               throw new Error("202");
           } else
-            throw new Error("201");
+              throw new Error("201");
       }
       else if (responseCode == 200) {
           if (isChangeDetailsChanged(prevPollChangeDetails, currChangeDetails)) {
@@ -6113,15 +6115,15 @@ async function doFetch({
 }
 
 function isChangeDetailsChanged(prevPollChangeDetails, currChangeDetails) {
-  if (Object.keys(currChangeDetails).length !== Object.keys(prevPollChangeDetails).length) {
-    return true;
-  }
-  for (let field of Object.keys(currChangeDetails)) {
-    if (currChangeDetails[field] !== prevPollChangeDetails[field]) {
+    if (Object.keys(currChangeDetails).length !== Object.keys(prevPollChangeDetails).length) {
       return true;
     }
-  }
-  return false;
+    for (let field of Object.keys(currChangeDetails)) {
+      if (currChangeDetails[field] !== prevPollChangeDetails[field]) {
+        return true;
+      }
+    }
+    return false;
 }
 
 module.exports = { doFetch };
@@ -6161,7 +6163,9 @@ async function tryFetch({
           token,
           jobname,
           githubContextStr,
-          prevPollChangeDetails
+          prevPollChangeDetails,
+          changeCreationTimeOut,
+          abortOnChangeCreationFailure
         });
     } catch (error) {
         if (error.message == "500") {

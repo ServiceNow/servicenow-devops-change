@@ -28,7 +28,9 @@ async function tryFetch({
           token,
           jobname,
           githubContextStr,
-          prevPollChangeDetails
+          prevPollChangeDetails,
+          changeCreationTimeOut,
+          abortOnChangeCreationFailure
         });
     } catch (error) {
         if (error.message == "500") {
