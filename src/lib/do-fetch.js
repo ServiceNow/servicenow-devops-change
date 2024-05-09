@@ -2,6 +2,7 @@ const core = require('@actions/core');
 const axios = require('axios');
 
 async function doFetch({
+  changeCreationStartTime,
   instanceUrl,
   toolId,
   username,
@@ -9,7 +10,9 @@ async function doFetch({
   token,
   jobname,
   githubContextStr,
-  prevPollChangeDetails
+  prevPollChangeDetails,
+  changeCreationTimeOut,
+  abortOnChangeCreationFailure
 }) {
 
 
@@ -89,51 +92,74 @@ async function doFetch({
   }
 
   if (status) {
-    try {
-      responseCode = response.status;
-    } catch (error) {
-      core.setFailed('\nCould not read response code from API response: ' + error);
-      throw new Error("500");
-    }
-
-    try {
-      changeStatus = response.data.result;
-    } catch (error) {
-      core.setFailed('\nCould not read change status details from API response: ' + error);
-      throw new Error("500");
-    }
-
-    let currChangeDetails = changeStatus.details;
-    let changeState = currChangeDetails.status;
-
-    if (currChangeDetails) {
-      if (currChangeDetails.number)
-        core.setOutput('change-request-number', currChangeDetails.number);
-      if (currChangeDetails.sys_id)
-        core.setOutput('change-request-sys-id', currChangeDetails.sys_id);
-    }
-
-    if (responseCode == 201) {
-      if (changeState == "pending_decision") {
-        if (isChangeDetailsChanged(prevPollChangeDetails, currChangeDetails)) {
-          console.log('\n \x1b[1m\x1b[32m' + JSON.stringify(currChangeDetails) + '\x1b[0m\x1b[0m');
-        }
-        throw new Error(JSON.stringify({ "statusCode": "201", "details": currChangeDetails }));
-      } else if ((changeState == "failed") || (changeState == "error")) {
-        throw new Error(JSON.stringify({ "status": "error", "details": currChangeDetails.details }));
-      } else if (changeState == "rejected" || changeState == "canceled_by_user") {
-        if (isChangeDetailsChanged(prevPollChangeDetails, currChangeDetails)) {
-          console.log('\n \x1b[1m\x1b[32m' + JSON.stringify(currChangeDetails) + '\x1b[0m\x1b[0m');
-        }
-        throw new Error("202");
+      core.debug("[ServiceNow DevOps], Polling started to fetch change info.");
+      try {
+        responseCode = response.status;
+      } catch (error) {
+        core.setFailed('\nCould not read response code from API response: ' + error);
+        throw new Error("500");
       }
-    }
-    else if (responseCode == 200) {
-      if (isChangeDetailsChanged(prevPollChangeDetails, currChangeDetails)) {
-        console.log('\n \x1b[1m\x1b[32m' + JSON.stringify(currChangeDetails) + '\x1b[0m\x1b[0m');
+
+      try {
+        changeStatus = response.data.result;
+      } catch (error) {
+        core.setFailed('\nCould not read change status details from API response: ' + error);
+        throw new Error("500");
       }
-      console.log('\n****Change is Approved.');
-    }
+
+      let currChangeDetails = changeStatus.details;
+      let changeState = currChangeDetails.status;
+
+      /**
+       * Check for changeCreationTimeOut. 
+       * If changeCreationTimeOut happened and change doesnot get created, then we need to terminate the step based on abortOnChangeCreationFailure flag.
+       * */
+      if(Object.keys(currChangeDetails).length === 0) {
+          if ((+new Date() - changeCreationStartTime) > (changeCreationTimeOut * 1000)) {
+              if (abortOnChangeCreationFailure) {
+                let errMsg = `Timeout after ${changeCreationTimeOut} seconds.Workflow execution is aborted since abortOnChangeCreationFailure flag is true`;
+                throw new Error(JSON.stringify({ "status": "error", "details": errMsg }));
+              }
+              else { 
+                console.error('\n    \x1b[38;5;214m Timeout occured after '+changeCreationTimeOut+' seconds but pipeline will coninue since abortOnChangeCreationFailure flag is false \x1b[38;5;214m');
+                throw new Error("ChangeCreationFailure_DontFailTheStep");
+              }
+          }
+      }
+
+      if (currChangeDetails) {
+        if (currChangeDetails.number)
+          core.setOutput('change-request-number', currChangeDetails.number);
+        if (currChangeDetails.sys_id)
+          core.setOutput('change-request-sys-id', currChangeDetails.sys_id);
+      }
+
+      /**
+       * 1. incase of change not created
+       * 2. incase of change created and not in implement state
+       */
+      if (responseCode == 201) {
+          if (changeState == "pending_decision") {
+              if (isChangeDetailsChanged(prevPollChangeDetails, currChangeDetails)) {
+                console.log('\n \x1b[1m\x1b[32m' + JSON.stringify(currChangeDetails) + '\x1b[0m\x1b[0m');
+              }
+              throw new Error(JSON.stringify({ "statusCode": "201", "details": currChangeDetails }));
+          } else if ((changeState == "failed") || (changeState == "error")) {
+              throw new Error(JSON.stringify({ "status": "error", "details": currChangeDetails.details }));
+          } else if (changeState == "rejected" || changeState == "canceled_by_user") {
+              if (isChangeDetailsChanged(prevPollChangeDetails, currChangeDetails)) {
+                console.log('\n \x1b[1m\x1b[32m' + JSON.stringify(currChangeDetails) + '\x1b[0m\x1b[0m');
+              }
+              throw new Error("202");
+          } else
+              throw new Error("201");
+      }
+      else if (responseCode == 200) { //incase of change created and in implemented state
+          if (isChangeDetailsChanged(prevPollChangeDetails, currChangeDetails)) {
+            console.log('\n \x1b[1m\x1b[32m' + JSON.stringify(currChangeDetails) + '\x1b[0m\x1b[0m');
+          }
+          console.log('\n****Change is Approved.');
+      }
   }
   else
     throw new Error("500");
@@ -142,15 +168,15 @@ async function doFetch({
 }
 
 function isChangeDetailsChanged(prevPollChangeDetails, currChangeDetails) {
-  if (Object.keys(currChangeDetails).length !== Object.keys(prevPollChangeDetails).length) {
-    return true;
-  }
-  for (let field of Object.keys(currChangeDetails)) {
-    if (currChangeDetails[field] !== prevPollChangeDetails[field]) {
+    if (Object.keys(currChangeDetails).length !== Object.keys(prevPollChangeDetails).length) {
       return true;
     }
-  }
-  return false;
+    for (let field of Object.keys(currChangeDetails)) {
+      if (currChangeDetails[field] !== prevPollChangeDetails[field]) {
+        return true;
+      }
+    }
+    return false;
 }
 
 module.exports = { doFetch };
