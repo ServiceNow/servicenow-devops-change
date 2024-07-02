@@ -6429,6 +6429,12 @@ const main = async() => {
 
     let abortOnChangeCreationFailure = core.getInput('abortOnChangeCreationFailure');
     abortOnChangeCreationFailure = abortOnChangeCreationFailure === undefined || abortOnChangeCreationFailure === "" ? true : (abortOnChangeCreationFailure == "true");
+
+    /**
+     * If timeout/changeCreationTimeOut is not provided by user, we will default it to 3600seconds.
+     * If timeout/changeCreationTimeOut is provided by user, we will consider the user input if the value is more than 100sec.Otherwise, will default to 100seconds.
+     * It is advisable to have changeCreationTimeOut value < timeout value
+     */
     let changeCreationTimeOut = parseInt(core.getInput('changeCreationTimeOut') || 3600);
     changeCreationTimeOut = changeCreationTimeOut >= 100 ? changeCreationTimeOut : 100;
 
