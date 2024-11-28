@@ -35137,7 +35137,7 @@ const main = async() => {
     const jobname = core.getInput('job-name', { required: true });
     const deploymentGateStr = core.getInput('deployment-gate', { required: false });
 
-    let changeRequestDetailsStr = core.getInput('change-request', { required: true });
+    let changeRequestDetailsStr = core.getInput('change-request', { required: false });
     let githubContextStr = core.getInput('context-github', { required: true });
 
     let abortOnChangeCreationFailure = core.getInput('abortOnChangeCreationFailure');

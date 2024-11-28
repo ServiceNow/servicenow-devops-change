@@ -32,7 +32,8 @@ inputs:
     default: '100'
   change-request:
     description: 'The customized inputs to create change with the requested details.'
-    required: true
+    required: false
+    default: '{}'
   changeCreationTimeOut:
     description: 'The max. time in seconds to wait until change created.'
     required: false
