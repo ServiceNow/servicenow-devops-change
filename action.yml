@@ -31,7 +31,7 @@ inputs:
     required: false
     default: '100'
   change-request:
-    description: 'The customized inputs to create change with the requested details.'
+    description: 'The customized inputs to create change with the requested details. All fields in the Change Request table are supported except risk, impact and risk_impact_analysis.'
     required: false
     default: '{}'
   changeCreationTimeOut:
