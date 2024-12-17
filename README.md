@@ -114,7 +114,7 @@ The values for secrets should be setup in Step 1. Secrets should be created in S
 
 ### `change-request`
 
-The change request details to be used while creating change in ServiceNow instance. The change request is a JSON object surrounded by curly braces _{}_ containing key-value pair separated by a comma _,_. A key-value pair consists of a key and a value separated by a colon _:_. The keys supported in key-value pair are *setCloseCode*, *short_description*, *description*, *assignment_group*, *implementation_plan*, *backout_plan*, *test_plan*
+The change request details to be used while creating change in ServiceNow instance. The change request is a JSON object surrounded by curly braces _{}_ containing key-value pair separated by a comma _,_. A key-value pair consists of a key and a value separated by a colon _:_. The keys supported in key-value pair are *setCloseCode*, *short_description*, *description*, *assignment_group*, *implementation_plan*, *backout_plan*, *test_plan*. All fields in the Change Request table are supported except risk, impact and risk_impact_analysis. For more information, [see documentation](https://docs.servicenow.com/bundle/vancouver-it-service-management/page/product/enterprise-dev-ops/concept/dev-ops-config-change-details.html).
 
 ### `interval`
 
