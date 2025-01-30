@@ -31,8 +31,9 @@ inputs:
     required: false
     default: '100'
   change-request:
-    description: 'The customized inputs to create change with the requested details.'
-    required: true
+    description: 'The customized inputs to create change with the requested details. All fields in the Change Request table are supported except risk, impact and risk_impact_analysis.'
+    required: false
+    default: '{}'
   changeCreationTimeOut:
     description: 'The max. time in seconds to wait until change created.'
     required: false
@@ -52,5 +53,5 @@ branding:
   icon: 'refresh-ccw'
   color: 'green'
 runs: 
-  using: 'node16'
+  using: 'node20'
   main: 'dist/index.js'
