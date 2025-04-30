@@ -49,6 +49,11 @@ inputs:
   deployment-gate:
     description: 'The customized inputs to process deployment gate job related change.'
     required: false
+outputs:
+  change-request-number:
+    description: 'This change request number is provided as output upon successful creation of the change.'
+  change-request-sys-id:
+    description: 'This change request sys id is provided as output upon successful creation of the change.'
 branding:
   icon: 'refresh-ccw'
   color: 'green'
