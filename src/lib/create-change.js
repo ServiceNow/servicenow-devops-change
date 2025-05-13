@@ -153,6 +153,7 @@ async function createChange({
             else
                 console.log('\n     \x1b[1m\x1b[36m' + "The job is under change control. A callback request is created and polling has been started to retrieve the change info." + '\x1b[0m\x1b[0m');
         }
+        return response;
     }
 }
 module.exports = { createChange };

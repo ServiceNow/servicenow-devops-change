@@ -54,10 +54,17 @@ const main = async() => {
       }
     }
 
-    if (deploymentGateStr)
+    if (deploymentGateStr) {
       status = false; //do not poll to check for deployment gate feature
+    }
 
     if (status) {
+      var result = response.data.result;
+      if (result.pipelineTracked === 'false') {
+        console.log("Change request cannot be created as pipeline is configured to NOT track in the servicenow instance");
+        return;
+      }
+
       let timeout = parseInt(core.getInput('timeout') || 3600);
       let interval = parseInt(core.getInput('interval') || 100);
 
