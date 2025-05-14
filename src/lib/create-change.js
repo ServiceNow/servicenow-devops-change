@@ -93,7 +93,7 @@ async function createChange({
     else {
         throw new Error('For Basic Auth, Username and Password is mandatory for integration user authentication');
     }
-    
+    console.log("Sending Request for Create Change, Payload :"+ JSON.stringify(payload)+"\n");
     core.debug("[ServiceNow DevOps], Sending Request for Create Change, Request Header :" + JSON.stringify(httpHeaders) + ", Payload :" + JSON.stringify(payload) + "\n");
     try {
         response = await axios.post(postendpoint, JSON.stringify(payload), httpHeaders);
