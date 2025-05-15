@@ -28002,7 +28002,6 @@ async function createChange({
     let payload;
     let postendpoint = '';
     let response;
-    let status = false;
 
     try {
         changeRequestDetails = JSON.parse(changeRequestDetailsStr);
@@ -28074,11 +28073,9 @@ async function createChange({
     else {
         throw new Error('For Basic Auth, Username and Password is mandatory for integration user authentication');
     }
-    
     core.debug("[ServiceNow DevOps], Sending Request for Create Change, Request Header :" + JSON.stringify(httpHeaders) + ", Payload :" + JSON.stringify(payload) + "\n");
     try {
         response = await axios.post(postendpoint, JSON.stringify(payload), httpHeaders);
-        status = true;
     } catch (err) {
         if (err.code === 'ECONNABORTED') {
             throw new Error(`change creation timeout after ${err.config.timeout}s`);
@@ -28126,17 +28123,10 @@ async function createChange({
             throw new Error(errMsg);
         }
     }
-    if (status) {
-        var result = response.data.result;
-        if (result && result.status == "Success") {
-            if(result.message)
-                console.log('\n     \x1b[1m\x1b[36m' + result.message + '\x1b[0m\x1b[0m');
-            else
-                console.log('\n     \x1b[1m\x1b[36m' + "The job is under change control. A callback request is created and polling has been started to retrieve the change info." + '\x1b[0m\x1b[0m');
-        }
-    }
+    return response
 }
 module.exports = { createChange };
+
 
 /***/ }),
 
@@ -35178,10 +35168,24 @@ const main = async() => {
       }
     }
 
-    if (deploymentGateStr)
+    if (deploymentGateStr) {
       status = false; //do not poll to check for deployment gate feature
+    }
 
     if (status) {
+      var result = response.data.result;
+      if (result && result.pipelineTracked === 'false') {
+        console.log("Change request cannot be created as pipeline is configured to NOT track in the servicenow instance");
+        return;
+      }
+
+      if (result && result.status == "Success") {
+          if(result.message)
+              console.log('\n     \x1b[1m\x1b[36m' + result.message + '\x1b[0m\x1b[0m');
+          else
+              console.log('\n     \x1b[1m\x1b[36m' + "The job is under change control. A callback request is created and polling has been started to retrieve the change info." + '\x1b[0m\x1b[0m');
+      }
+      
       let timeout = parseInt(core.getInput('timeout') || 3600);
       let interval = parseInt(core.getInput('interval') || 100);
 
