@@ -28073,10 +28073,13 @@ async function createChange({
     else {
         throw new Error('For Basic Auth, Username and Password is mandatory for integration user authentication');
     }
+    console.log("[ServiceNow DevOps], Sending Request for Create Change, Request Header :" + JSON.stringify(httpHeaders) + ", Payload :" + JSON.stringify(payload) + "\n");
     core.debug("[ServiceNow DevOps], Sending Request for Create Change, Request Header :" + JSON.stringify(httpHeaders) + ", Payload :" + JSON.stringify(payload) + "\n");
     try {
         response = await axios.post(postendpoint, JSON.stringify(payload), httpHeaders);
     } catch (err) {
+        console.log('Full Error Object:', JSON.stringify(err, null, 2));
+        console.log('Error occurred:', `Code: ${err.code}, Message: ${err.message}`);
         if (err.code === 'ECONNABORTED') {
             throw new Error(`change creation timeout after ${err.config.timeout}s`);
         }
