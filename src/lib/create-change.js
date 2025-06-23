@@ -25,7 +25,7 @@ async function createChange({
     try {
         changeRequestDetails = JSON.parse(changeRequestDetailsStr);
     } catch (e) {
-        console.log(`[ServiceNow DevOps], Error occured with message ${e}`);
+        displayErrorMsg(`[ServiceNow DevOps], Error occured with message ${e}`);
         throw new Error("Failed parsing changeRequestDetails");
     }
 
@@ -33,14 +33,14 @@ async function createChange({
         if (deploymentGateStr)
             deploymentGateDetails = JSON.parse(deploymentGateStr);
     } catch (e) {
-        console.log(`[ServiceNow DevOps], Error occured with message ${e}`);
+        displayErrorMsg(`[ServiceNow DevOps], Error occured with message ${e}`);
         throw new Error("Failed parsing deploymentGateDetails");
     }
 
     try {
         githubContext = JSON.parse(githubContextStr);
     } catch (e) {
-        console.log(`ServiceNow DevOps],Error occured with message ${e}`);
+        displayErrorMsg(`ServiceNow DevOps],Error occured with message ${e}`);
         throw new Error("Exception parsing github context");
     }
 
@@ -97,7 +97,7 @@ async function createChange({
         response = await axios.post(postendpoint, JSON.stringify(payload), httpHeaders);
     } catch (err) {
         core.debug('[ServiceNow DevOps] Detailed error information:', JSON.stringify(err, null, 2));
-        console.log('[ServiceNow DevOps], Error occurred with create change call:', `Code: ${err.code}, Message: ${err.message}`);
+        displayErrorMsg('[ServiceNow DevOps], Error occurred with create change call:', `Code: ${err.code}, Message: ${err.message}`);
         if (err.code === 'ECONNABORTED') {
             throw new Error(`change creation timeout after ${err.config.timeout}s`);
         }
@@ -146,4 +146,10 @@ async function createChange({
     }
     return response
 }
+
+function displayErrorMsg(errMsg) {
+    console.error('\n\x1b[31m' + errMsg + '\x1b[31m');
+    core.setFailed(errMsg);
+}
+
 module.exports = { createChange };
