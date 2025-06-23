@@ -96,8 +96,8 @@ async function createChange({
     try {
         response = await axios.post(postendpoint, JSON.stringify(payload), httpHeaders);
     } catch (err) {
-        core.debug('[ServiceNow DevOps] Detailed error information:', JSON.stringify(err, null, 2));
-        displayErrorMsg('[ServiceNow DevOps], Error occurred with create change call:', `Code: ${err.code}, Message: ${err.message}`);
+        core.debug("[ServiceNow DevOps] Detailed error information:"+ JSON.stringify(err, null, 2));
+        displayErrorMsg(`[ServiceNow DevOps], Error occurred with create change call  - Code: ${err.code}, Message: ${err.message}`);
         if (err.code === 'ECONNABORTED') {
             throw new Error(`change creation timeout after ${err.config.timeout}s`);
         }
