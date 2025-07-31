@@ -35,7 +35,7 @@ deploy:
     runs-on: ubuntu-latest
     steps:     
       - name: ServiceNow Change
-        uses: ServiceNow/servicenow-devops-change@v6.0.0
+        uses: ServiceNow/servicenow-devops-change@v6.1.0
         id: create
         with:
           devops-integration-token: ${{ secrets.SN_DEVOPS_INTEGRATION_TOKEN }}
@@ -62,7 +62,7 @@ deploy:
     runs-on: ubuntu-latest
     steps:     
       - name: ServiceNow Change
-        uses: ServiceNow/servicenow-devops-change@v6.0.0
+        uses: ServiceNow/servicenow-devops-change@v6.1.0
         with:
           devops-integration-user-name: ${{ secrets.SN_DEVOPS_USER }}
           devops-integration-user-password: ${{ secrets.SN_DEVOPS_PASSWORD }}
