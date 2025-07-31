@@ -34,7 +34,7 @@ jobs:
 
     steps:     
       - name: ServiceNow Change Approval
-        uses: ServiceNow/servicenow-devops-change@v6.0.0
+        uses: ServiceNow/servicenow-devops-change@v6.1.0
         id: create
         with:
           devops-integration-user-name: ${{ secrets.SN_DEVOPS_USER }}
