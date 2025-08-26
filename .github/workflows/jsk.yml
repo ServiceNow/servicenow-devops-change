@@ -1,0 +1,23 @@
+name: Generate JKS
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Generate JKS with Secret
+        run: |
+          keytool -genkeypair -alias mykey -keyalg RSA -keysize 2048 \
+            -storepass "${{ secrets.MELVINITEST }}" \
+            -keypass "${{ secrets.MELVINITEST }}" \
+            -dname "CN=example.com, OU=IT, O=Example Corp, L=City, S=State, C=US" \
+            -keystore keystore.jks -validity 3650
+
+      - name: Upload JKS as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: keystore
+          path: keystore.jks
