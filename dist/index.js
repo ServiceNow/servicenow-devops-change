@@ -5034,7 +5034,7 @@ FormData.prototype._generateBoundary = function() {
   // They are optimized for boyer-moore parsing.
   var boundary = '--------------------------';
   for (var i = 0; i < 24; i++) {
-    boundary += Math.floor(Math.random() * 10).toString(16);
+    boundary += Math.floor(crypto.randomUUID() * 10).toString(16);
   }
 
   this._boundary = boundary;
@@ -13961,7 +13961,7 @@ function extractBody (object, keepalive = false) {
     // Set source to a copy of the bytes held by object.
     source = new Uint8Array(object.buffer.slice(object.byteOffset, object.byteOffset + object.byteLength))
   } else if (util.isFormDataLike(object)) {
-    const boundary = `----formdata-undici-0${`${Math.floor(Math.random() * 1e11)}`.padStart(11, '0')}`
+    const boundary = `----formdata-undici-0${`${Math.floor(crypto.randomUUID() * 1e11)}`.padStart(11, '0')}`
     const prefix = `--${boundary}\r\nContent-Disposition: form-data`
 
     /*! formdata-polyfill. MIT License. Jimmy Wärting <https://jimmy.warting.se/opensource> */
@@ -30963,7 +30963,7 @@ const generateString = (size = 16, alphabet = ALPHABET.ALPHA_DIGIT) => {
   let str = '';
   const {length} = alphabet;
   while (size--) {
-    str += alphabet[Math.random() * length|0];
+    str += alphabet[crypto.randomUUID() * length|0];
   }
 
   return str;
@@ -31035,7 +31035,7 @@ const _setImmediate = ((setImmediateSupported, postMessageSupported) => {
       callbacks.push(cb);
       _global.postMessage(token, "*");
     }
-  })(`axios@${Math.random()}`, []) : (cb) => setTimeout(cb);
+  })(`axios@${crypto.randomUUID()}`, []) : (cb) => setTimeout(cb);
 })(
   typeof setImmediate === 'function',
   isFunction(_global.postMessage)
