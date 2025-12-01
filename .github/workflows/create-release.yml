@@ -68,8 +68,26 @@ jobs:
         with:
           node-version: '18'
       
-      - name: Install dependencies
-        run: npm ci
+      - name: Clean and install dependencies
+        run: |
+          echo "Cleaning any existing installation..."
+          rm -rf node_modules package-lock.json
+
+          echo "Installing dependencies with npm install..."
+          npm install --prefer-offline --no-audit
+
+          echo "Verifying installation..."
+          if [ -f "node_modules/.bin/ncc" ]; then
+            echo "✅ ncc binary found"
+            ls -la node_modules/.bin/ncc
+          else
+            echo "❌ ncc binary not found"
+            echo "Contents of node_modules/.bin/:"
+            ls -la node_modules/.bin/ || echo "node_modules/.bin/ directory does not exist"
+            echo "Contents of @vercel/ncc:"
+            ls -la node_modules/@vercel/ || echo "@vercel directory not found"
+            exit 1
+          fi
       
       - name: Build distribution
         run: npm run build
@@ -141,3 +159,16 @@ jobs:
           echo "- Invalid tag format" >> $GITHUB_STEP_SUMMARY
           echo "- Build failures" >> $GITHUB_STEP_SUMMARY
           echo "- Permission issues" >> $GITHUB_STEP_SUMMARY
+          ls -la /home/runner/.npm/_logs/
+
+          echo "Finding the latest log file..."
+          LATEST_LOG=$(ls -t /home/runner/.npm/_logs | head -n 1)
+
+          if [ -z "$LATEST_LOG" ]; then
+            echo "No log file found."
+          else
+            echo "Displaying latest npm debug log: $LATEST_LOG"
+            cat /home/runner/.npm/_logs/$LATEST_LOG
+            # Use Node.js to read and print the file to avoid shell issues
+            node -e "console.log(require('fs').readFileSync('/home/runner/.npm/_logs/' + process.argv[1], 'utf-8'))" "$LATEST_LOG"
+          fi

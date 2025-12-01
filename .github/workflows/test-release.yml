@@ -73,10 +73,26 @@ jobs:
         with:
           node-version: '18'
       
-      - name: Install dependencies
+      - name: Clean and install dependencies
         run: |
-          echo "Installing dependencies..."
-          npm ci
+          echo "Cleaning any existing installation..."
+          rm -rf node_modules package-lock.json
+
+          echo "Installing dependencies with npm install..."
+          npm install --prefer-offline --no-audit
+
+          echo "Verifying installation..."
+          if [ -f "node_modules/.bin/ncc" ]; then
+            echo "✅ ncc binary found"
+            ls -la node_modules/.bin/ncc
+          else
+            echo "❌ ncc binary not found"
+            echo "Contents of node_modules/.bin/:"
+            ls -la node_modules/.bin/ || echo "node_modules/.bin/ directory does not exist"
+            echo "Contents of @vercel/ncc:"
+            ls -la node_modules/@vercel/ || echo "@vercel directory not found"
+            exit 1
+          fi
           echo "✅ Dependencies installed"
       
       - name: Build distribution
