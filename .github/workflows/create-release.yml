@@ -1,0 +1,174 @@
+name: Create Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release version tag (e.g., v2.0.0)'
+        required: true
+        type: string
+      release_notes:
+        description: 'Release notes/description'
+        required: true
+        type: string
+      set_as_latest:
+        description: 'Set as the latest release'
+        required: false
+        type: boolean
+        default: true
+      is_prerelease:
+        description: 'Set as a pre-release'
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  create-release:
+    name: Create and Publish Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      
+      - name: Validate tag format
+        run: |
+          TAG="${{ inputs.tag }}"
+          if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Error: Tag must be in format v*.*.* (e.g., v2.0.0)"
+            exit 1
+          fi
+          echo "Tag format is valid: $TAG"
+      
+      - name: Check if tag already exists
+        run: |
+          TAG="${{ inputs.tag }}"
+          if git rev-parse "$TAG" >/dev/null 2>&1; then
+            echo "Error: Tag $TAG already exists"
+            exit 1
+          fi
+          echo "Tag $TAG is available"
+      
+      - name: Verify branch is main
+        run: |
+          BRANCH=$(git rev-parse --abbrev-ref HEAD)
+          if [ "$BRANCH" != "main" ]; then
+            echo "Error: Current branch is $BRANCH, must be main"
+            exit 1
+          fi
+          echo "Confirmed on main branch"
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      
+      - name: Clean and install dependencies
+        run: |
+          echo "Cleaning any existing installation..."
+          rm -rf node_modules package-lock.json
+
+          echo "Installing dependencies with npm install..."
+          npm install --prefer-offline --no-audit
+
+          echo "Verifying installation..."
+          if [ -f "node_modules/.bin/ncc" ]; then
+            echo "✅ ncc binary found"
+            ls -la node_modules/.bin/ncc
+          else
+            echo "❌ ncc binary not found"
+            echo "Contents of node_modules/.bin/:"
+            ls -la node_modules/.bin/ || echo "node_modules/.bin/ directory does not exist"
+            echo "Contents of @vercel/ncc:"
+            ls -la node_modules/@vercel/ || echo "@vercel directory not found"
+            exit 1
+          fi
+      
+      - name: Build distribution
+        run: npm run build
+      
+      - name: Verify build artifacts
+        run: |
+          if [ ! -f "dist/index.js" ]; then
+            echo "Error: dist/index.js not found after build"
+            exit 1
+          fi
+          echo "Build artifacts verified"
+      
+      - name: Commit build artifacts (if changed)
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          if [[ -n $(git status -s dist/) ]]; then
+            git add dist/
+            git commit -m "Build distribution for ${{ inputs.tag }}"
+            git push origin main
+            echo "Build artifacts committed and pushed"
+          else
+            echo "No changes to build artifacts"
+          fi
+      
+      - name: Create and push tag
+        run: |
+          TAG="${{ inputs.tag }}"
+          git tag -a "$TAG" -m "Release $TAG"
+          git push origin "$TAG"
+          echo "Tag $TAG created and pushed"
+      
+      - name: Create GitHub Release
+        uses: actions/create-release@v1
+        id: create_release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ inputs.tag }}
+          release_name: ${{ inputs.tag }}
+          body: ${{ inputs.release_notes }}
+          draft: false
+          prerelease: ${{ inputs.is_prerelease }}
+          make_latest: ${{ inputs.set_as_latest }}
+      
+      - name: Release Summary
+        run: |
+          echo "## Release Created Successfully! 🎉" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Version:** ${{ inputs.tag }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Release URL:** ${{ steps.create_release.outputs.html_url }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Pre-release:** ${{ inputs.is_prerelease }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Latest Release:** ${{ inputs.set_as_latest }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Next Steps:" >> $GITHUB_STEP_SUMMARY
+          echo "1. ✅ Verify the release at: ${{ steps.create_release.outputs.html_url }}" >> $GITHUB_STEP_SUMMARY
+          echo "2. ✅ Check GitHub Marketplace for the new version" >> $GITHUB_STEP_SUMMARY
+          echo "3. ✅ Inform QE team to test the GitHub Action" >> $GITHUB_STEP_SUMMARY
+      
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "## Release Creation Failed ❌" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Please check the workflow logs for details." >> $GITHUB_STEP_SUMMARY
+          echo "Common issues:" >> $GITHUB_STEP_SUMMARY
+          echo "- Tag already exists" >> $GITHUB_STEP_SUMMARY
+          echo "- Invalid tag format" >> $GITHUB_STEP_SUMMARY
+          echo "- Build failures" >> $GITHUB_STEP_SUMMARY
+          echo "- Permission issues" >> $GITHUB_STEP_SUMMARY
+          ls -la /home/runner/.npm/_logs/
+
+          echo "Finding the latest log file..."
+          LATEST_LOG=$(ls -t /home/runner/.npm/_logs | head -n 1)
+
+          if [ -z "$LATEST_LOG" ]; then
+            echo "No log file found."
+          else
+            echo "Displaying latest npm debug log: $LATEST_LOG"
+            cat /home/runner/.npm/_logs/$LATEST_LOG
+            # Use Node.js to read and print the file to avoid shell issues
+            node -e "console.log(require('fs').readFileSync('/home/runner/.npm/_logs/' + process.argv[1], 'utf-8'))" "$LATEST_LOG"
+          fi
