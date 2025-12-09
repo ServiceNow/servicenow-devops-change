@@ -1,218 +1,133 @@
-# GitHub Actions Workflows Documentation
+# Release and Workflow Guide
 
-This document provides detailed information about all GitHub Actions workflows in this repository.
-
----
-
-## Table of Contents
-
-1. [CodeQL Security Scan](#1-codeql-security-scan)
-2. [Create Release](#2-create-release)
-3. [Test Release (Dry Run)](#3-test-release-dry-run)
+This guide explains how to use the automated release workflows for this GitHub Action and provides detailed documentation about the CI/CD workflows.
 
 ---
 
-## 1. CodeQL Security Scan
+## 📋 Table of Contents
 
-**File:** `.github/workflows/codeql.yml`
+- [Overview](#overview)
+- [Workflows Overview](#workflows-overview)
+  - [Workflow Comparison Matrix](#workflow-comparison-matrix)
+- [CodeQL Security Scan](#codeql-security-scan)
+- [Test Release (Dry Run)](#test-release-dry-run)
+  - [When to Use](#when-to-use)
+  - [How to Run](#how-to-run)
+  - [Technical Details](#technical-details-test-release)
+- [Create Release (Production)](#create-release-production)
+  - [When to Use](#when-to-use-production)
+  - [How to Run](#how-to-run-production)
+  - [Technical Details](#technical-details-create-release)
+- [Best Practices](#best-practices)
+  - [Versioning](#versioning)
+  - [Release Checklist](#release-checklist)
+  - [Writing Good Release Notes](#writing-good-release-notes)
+- [Troubleshooting](#troubleshooting)
+- [Additional Resources](#additional-resources)
+- [Support](#support)
 
-### Purpose
-Automated security scanning using GitHub's CodeQL analysis to identify security vulnerabilities and code quality issues in the JavaScript codebase.
+---
 
-### Triggers
-- **Pull Requests:** Runs on all PRs targeting the `main` branch
-- **Schedule:** Runs every Monday at 00:00 UTC (weekly scan)
-- **Manual:** Can be triggered manually via `workflow_dispatch`
+## Overview
+
+We have two primary workflows for releasing this GitHub Action:
+
+1.  **Test Release** - A safe, dry-run environment that creates a *draft* release.
+2.  **Create Release** - The production workflow that publishes a *public* release to the GitHub Marketplace.
+
+**Always test first with a Test Release before creating a production release!**
+
+---
+
+## Workflows Overview
+
+This repository uses GitHub Actions for CI/CD, including security scanning and automated releases.
+
+### Workflow Comparison Matrix
+
+| Workflow | Purpose | Trigger | Creates Release | Safe for Testing |
+|----------|---------|---------|----------------|------------------|
+| **`codeql.yml`** | Security scanning | Auto + Manual | No | ✅ Yes |
+| **`create-release.yml`** | Production release | Manual | Yes (Published) | ⚠️ No |
+| **`test-release.yml`** | Test release process | Manual | Yes (Draft only) | ✅ Yes |
+
+---
+
+## CodeQL Security Scan
+
+This workflow automatically scans the codebase for security vulnerabilities using GitHub's CodeQL analysis to identify security risks and code quality issues.
+
+-   **File:** `.github/workflows/codeql.yml`
+-   **Purpose:** To automate security scanning and identify vulnerabilities before they are introduced into the main branch.
+-   **Triggers:** 
+    -   **Pull Requests:** Runs on all PRs targeting the `main` branch.
+    -   **Schedule:** Runs weekly (every Monday at 00:00 UTC).
+    -   **Manual:** Can be triggered manually.
 
 ### What It Does
-1. Checks out the repository
-2. Initializes CodeQL with JavaScript language support
-3. Runs security-extended queries for comprehensive analysis
-4. Automatically builds the project
-5. Performs CodeQL analysis and uploads results to GitHub Security tab
 
-### Permissions Required
-- `actions: read` - Read workflow information
-- `contents: read` - Read repository contents
-- `security-events: write` - Write security scan results
+1.  **Initializes CodeQL:** Sets up the CodeQL engine with JavaScript language support.
+2.  **Runs Analysis:** Executes the `security-extended` query suite for a comprehensive scan.
+3.  **Uploads Results:** Reports findings to the **Security** tab under **Code scanning alerts**.
 
-### Configuration
-- **Language:** JavaScript
-- **Query Suite:** `security-extended` (comprehensive security checks)
-- **Runner:** `ubuntu-latest`
+
+### Permissions & Configuration
+
+-   **Permissions:**
+    -   `actions: read`: To read workflow information.
+    -   `contents: read`: To read repository contents for scanning.
+    -   `security-events: write`: To write security scan results to the Security tab.
+-   **Query Suite:** `security-extended`
+-   **Runner:** `ubuntu-latest`
+
+### How to Use
+
+-   The workflow runs automatically. Review results in the **Security** tab and address any identified vulnerabilities before merging pull requests.
+
+---
+
+## Test Release (Dry Run)
+
+Use this workflow to test the release process safely without publishing anything. It creates a draft release for validation.
 
 ### When to Use
-- Automatically runs on every PR and weekly
-- Review results in the **Security** tab → **Code scanning alerts**
-- Address any identified vulnerabilities before merging
 
----
+- Before a production release to ensure everything works.
+- When testing changes to the build or release workflow.
+- To validate release notes and artifacts.
 
-## 2. Create Release
+### How to Run
 
-**File:** `.github/workflows/create-release.yml`
+1.  Navigate to the **Actions** tab in the GitHub repository.
+2.  Select **"Test Release (Dry Run)"** from the workflow list.
+3.  Click the **"Run workflow"** button.
+4.  Fill in the required inputs:
 
-### Purpose
-Automates the complete release process for publishing new versions of the ServiceNow DevOps Change GitHub Action to the marketplace.
+| Input | Example | Description |
+|---|---|---|
+| **Tag** | `v2.0.0-test` | Use a test suffix like `-test`, `-rc1`, or `-beta`. |
+| **Release notes** | `Testing release automation` | A brief description for the test. |
+| **Set as latest** | ☐ Unchecked | Leave unchecked for testing. |
+| **Set as pre-release** | ✓ Checked | Mark as a pre-release for testing. |
 
-### Triggers
-- **Manual Only:** `workflow_dispatch` with required inputs
+5.  Click **"Run workflow"**.
 
-### Required Inputs
+After the workflow completes, review the draft release, then delete it.
 
-| Input | Type | Required | Default | Description |
-|-------|------|----------|---------|-------------|
-| `tag` | string | ✅ Yes | - | Release version tag (e.g., `v2.0.0`) |
-| `release_notes` | string | ✅ Yes | - | Description/release notes for the release |
-| `set_as_latest` | boolean | No | `true` | Mark this release as the latest |
-| `is_prerelease` | boolean | No | `false` | Mark this release as a pre-release |
+### Technical Details (test-release.yml)
 
-### Workflow Steps
+-   **File:** `.github/workflows/test-release.yml`
+-   **Trigger:** Manual (`workflow_dispatch`)
+-   **Permissions:** `contents: write`
 
-1. **Validation Phase**
-   - ✅ Validates tag format (must be `v*.*.*` format, e.g., `v2.0.0`)
-   - ✅ Checks if tag already exists (prevents duplicates)
-   - ✅ Verifies current branch is `main`
+**Workflow Steps:**
 
-2. **Build Phase**
-   - ✅ Sets up Node.js 18.x
-   - ✅ Installs dependencies with `npm ci`
-   - ✅ Builds distribution with `npm run build`
-   - ✅ Verifies `dist/index.js` exists
+1.  **Validation:** Checks tag format, verifies the current branch is `main`, and checks if the tag already exists.
+2.  **Build:** Installs dependencies (`npm ci`), builds the distribution (`npm run build`), and verifies the build artifacts.
+3.  **Simulation:** Shows what commands would run, checks for uncommitted changes, and simulates tag creation without pushing.
+4.  **Draft Release:** Creates a non-published **DRAFT** release, adds a "TEST" label to the release name, and includes a warning in the release body.
+5.  **Summary:** Shows all validation results, provides the draft release URL, and lists cleanup steps.
 
-3. **Commit Phase**
-   - ✅ Commits build artifacts if changed
-   - ✅ Pushes changes to `main` branch
-
-4. **Release Phase**
-   - ✅ Creates annotated Git tag
-   - ✅ Pushes tag to GitHub
-   - ✅ Creates and publishes GitHub release
-
-5. **Summary Phase**
-   - ✅ Provides release URL
-   - ✅ Lists next steps (verify release, check marketplace, inform QE)
-
-### Permissions Required
-- `contents: write` - Create tags and releases
-
-### How to Use
-
-1. Go to **Actions** tab in GitHub
-2. Select **"Create Release"** workflow
-3. Click **"Run workflow"** button
-4. Fill in the inputs:
-   ```
-   Tag: v2.0.0
-   Release notes: 
-   - Added new feature X
-   - Fixed bug Y
-   - Updated dependencies
-   
-   Set as latest: ✓ (checked)
-   Set as pre-release: ☐ (unchecked)
-   ```
-5. Click **"Run workflow"**
-
-### Post-Release Checklist
-
-After the workflow completes successfully:
-
-- [ ] Verify the release at the provided URL
-- [ ] Check GitHub Marketplace for the new version
-- [ ] Inform QE team to test the GitHub Action
-- [ ] Update any documentation if needed
-
-### Error Handling
-
-The workflow will fail if:
-- Tag format is invalid (not `v*.*.*`)
-- Tag already exists
-- Not on `main` branch
-- Build fails
-- Permission issues
-
----
-
-## 3. Test Release (Dry Run)
-
-**File:** `.github/workflows/test-release.yml`
-
-### Purpose
-Provides a safe testing environment to validate the release process without actually publishing a release. Creates a draft release for review.
-
-### Triggers
-- **Manual Only:** `workflow_dispatch` with required inputs
-
-### Required Inputs
-
-| Input | Type | Required | Default | Description |
-|-------|------|----------|---------|-------------|
-| `tag` | string | ✅ Yes | - | Test version tag (e.g., `v2.0.0-test`) |
-| `release_notes` | string | ✅ Yes | - | Test release notes |
-| `set_as_latest` | boolean | No | `false` | Mark as latest (default: false for testing) |
-| `is_prerelease` | boolean | No | `true` | Mark as pre-release (default: true for testing) |
-
-### Key Differences from Production Release
-
-| Feature | Test Workflow | Production Workflow |
-|---------|--------------|---------------------|
-| Release Type | **Draft** (not published) | **Published** |
-| Tag Creation | **Simulated** (not pushed) | **Actually created & pushed** |
-| Tag Format | Allows `-test`, `-rc`, `-beta` suffixes | Strict `v*.*.*` only |
-| Default Settings | Pre-release=true, Latest=false | Pre-release=false, Latest=true |
-| Safe to Run | ✅ Yes, anytime | ⚠️ Only for real releases |
-
-### Workflow Steps
-
-1. **Validation Phase**
-   - ✅ Validates tag format (allows test suffixes)
-   - ✅ Checks if tag exists (warns but continues)
-   - ✅ Verifies current branch is `main`
-
-2. **Build Phase**
-   - ✅ Sets up Node.js 18.x
-   - ✅ Installs dependencies
-   - ✅ Builds distribution
-   - ✅ Verifies build artifacts
-
-3. **Simulation Phase**
-   - ✅ Shows what commands would run
-   - ✅ Checks for uncommitted changes
-   - ✅ Simulates tag creation (doesn't push)
-
-4. **Draft Release Phase**
-   - ✅ Creates a **DRAFT** release (not published)
-   - ✅ Adds "TEST" label to release name
-   - ✅ Includes warning in release body
-
-5. **Test Summary**
-   - ✅ Shows all validation results
-   - ✅ Provides draft release URL
-   - ✅ Lists cleanup steps
-
-### How to Use
-
-1. Go to **Actions** tab in GitHub
-2. Select **"Test Release (Dry Run)"** workflow
-3. Click **"Run workflow"** button
-4. Fill in test inputs:
-   ```
-   Tag: v2.0.0-test
-   Release notes: Testing release automation
-   Set as latest: ☐ (unchecked)
-   Set as pre-release: ✓ (checked)
-   ```
-5. Click **"Run workflow"**
-6. Review the draft release created
-7. **Important:** Delete the draft release after testing
-
-### Recommended Test Tags
-
-- `v2.0.0-test` - General testing
-- `v2.0.0-rc1` - Release candidate testing
-- `v2.0.0-beta` - Beta version testing
-- `v2.0.0-alpha` - Alpha version testing
 
 ### Testing Checklist
 
@@ -224,92 +139,173 @@ Provides a safe testing environment to validate the release process without actu
 - [ ] Delete draft release after review
 - [ ] Ready to run production release
 
-
-
 ---
 
-## Workflow Comparison Matrix
+## Create Release (Production)
 
-| Workflow | Purpose | Trigger | Creates Release | Safe for Testing |
-|----------|---------|---------|----------------|------------------|
-| **codeql.yml** | Security scanning | Auto + Manual | No | ✅ Yes |
-| **create-release.yml** | Production release | Manual | Yes (Published) | ⚠️ No |
-| **test-release.yml** | Test release process | Manual | Yes (Draft only) | ✅ Yes |
+This workflow creates and publishes a real, public release to the GitHub Marketplace.
+
+### ⚠️ Important
+
+-   This is for **production releases only**.
+-   Ensure you have successfully run a **Test Release** first.
+-   You must be on the `main` branch.
+
+### How to Run
+
+1.  Go to the **Actions** tab.
+2.  Select **"Create Release"** from the workflow list.
+3.  Click **"Run workflow"**.
+4.  Fill in the inputs:
+
+| Input | Example | Description |
+|---|---|---|
+| **Tag** | `v2.0.0` | Must follow semantic versioning (e.g., `v*.*.*`). |
+| **Release notes** | See example below | Detailed notes for the release. |
+| **Set as latest** | ✓ Checked | Mark as the latest official release. |
+| **Set as pre-release** | ☐ Unchecked | Only check for beta or RC versions. |
+
+5.  Click **"Run workflow"**.
+
+### Example Release Notes
+
+```markdown
+## What's New
+
+### Features
+- Added support for deployment gates
+- Improved error handling and logging
+- Updated to use token-based authentication
+
+### Bug Fixes
+- Fixed issue with change request creation timeout
+- Resolved npm build errors in CI/CD
+
+### Dependencies
+- Updated axios to v1.7.7
+- Updated @actions/core to v1.10.1
+
+### Breaking Changes
+None
+
+### Upgrade Instructions
+Simply update your workflow to use `@v2.0.0` instead of the previous version.
+```
+
+### Technical Details (create-release.yml)
+
+-   **File:** `.github/workflows/create-release.yml`
+-   **Trigger:** Manual (`workflow_dispatch`)
+-   **Permissions:** `contents: write`
+
+**Workflow Steps:**
+
+1.  **Validation Phase:** Enforces strict tag format (`v*.*.*`), checks for existing tags, and verifies the branch is `main`.
+2.  **Build Phase:** Sets up Node.js, installs dependencies with `npm ci`, builds the distribution with `npm run build`, and verifies that `dist/index.js` exists.
+3.  **Commit Phase:** Commits and pushes build artifacts to the `main` branch.
+4.  **Release Phase:** Creates an annotated Git tag, pushes the tag, and publishes the final release to GitHub.
+5.  **Summary Phase:** Provides the release URL and a post-release checklist.
+
+### Post-Release Checklist
+
+After the workflow completes successfully, follow these steps:
+
+- [ ] **Verify the release** at the URL provided in the workflow summary.
+- [ ] **Check GitHub Marketplace** to confirm the new version appears (this may take 5-10 minutes).
+- [ ] **Inform the QE team** to begin testing the new version.
+- [ ] **Monitor for issues** from users.
+- [ ] **Update documentation** if needed.
 
 ---
 
 ## Best Practices
 
-### For Releases
+### Versioning
 
-1. **Always test first**
-   - Run `test-release.yml` with a test tag before production
-   - Review the draft release carefully
-   - Verify all build artifacts are correct
+Follow [Semantic Versioning (SemVer)](https://semver.org/):
 
-2. **Use semantic versioning**
-   - Format: `v<major>.<minor>.<patch>`
-   - Example: `v2.0.0`, `v2.1.0`, `v2.1.1`
+-   **Major** (`v2.0.0`): For breaking changes.
+-   **Minor** (`v2.1.0`): For new, backward-compatible features.
+-   **Patch** (`v2.1.1`): For backward-compatible bug fixes.
 
-3. **Write clear release notes**
-   - List new features
-   - Document bug fixes
-   - Note breaking changes
-   - Include upgrade instructions if needed
+### Release Checklist
 
-4. **Verify after release**
-   - Check the release page
-   - Verify GitHub Marketplace listing
-   - Test the published action
+-   [ ] All changes are merged into the `main` branch.
+-   [ ] All automated tests are passing.
+-   [ ] A **Test Release** was successful.
+-   [ ] Release notes are prepared and follow the recommended format.
+-   [ ] The version number is correct and follows SemVer.
 
-### For Security
+### Writing Good Release Notes
 
-1. **Review CodeQL results regularly**
-   - Check Security tab weekly
-   - Address critical issues immediately
-   - Track and fix medium/low issues
+**Do:**
+- ✅ List all new features
+- ✅ Document bug fixes
+- ✅ Note any breaking changes
+- ✅ Include upgrade instructions
+- ✅ Credit contributors
 
-2. **Keep dependencies updated**
-   - Monitor for security advisories
-   - Update vulnerable packages promptly
-   - Test after updates
+**Don't:**
+- ❌ Be vague ("various improvements")
+- ❌ Use internal jargon
+- ❌ Forget to mention breaking changes
+- ❌ Skip upgrade instructions
 
+A good format example:
 
+```markdown
+## What's New
+
+### Features
+- Added support for deployment gates.
+
+### Bug Fixes
+- Fixed an issue with change request timeouts.
+
+### Breaking Changes
+- None.
+```
+
+---
+
+## Quick Reference
+
+### Test Release Command
+```
+Actions → Test Release (Dry Run) → Run workflow
+Tag: v2.0.0-test
+```
+
+### Production Release Command
+```
+Actions → Create Release → Run workflow
+Tag: v2.0.0
+```
+
+### After Production Release
+1. Verify release page
+2. Check GitHub Marketplace
+3. Inform QE team
+4. Monitor for issues
 
 ---
 
 ## Troubleshooting
 
-### Release Workflow Issues
-
-**Problem:** Tag already exists
-- **Solution:** Choose a different version number or delete the existing tag
-
-**Problem:** Build fails
-- **Solution:** Run `npm ci && npm run build` locally to identify issues
-
-**Problem:** Not on main branch
-- **Solution:** Switch to main branch and ensure it's up to date
-
-### CodeQL Issues
-
-**Problem:** Analysis fails
-- **Solution:** Check if code has syntax errors, fix and re-run
-
-**Problem:** Too many alerts
-- **Solution:** Prioritize by severity, address critical issues first
-
-
+-   **"Tag already exists"**: Choose a new version number or delete the conflicting tag if it was a mistake.
+-   **Build Fails**: Run `npm ci && npm run build` locally to debug. Check for missing dependencies in `package.json`.
+-   **Not on `main` branch**: Switch to the `main` branch and pull the latest changes.
+-   **Release not in Marketplace**: Wait 5-10 minutes. Ensure the release is marked as "latest" and `action.yml` is correct.
 
 ---
 
 ## Additional Resources
 
-- [GitHub Actions Documentation](https://docs.github.com/en/actions)
-- [CodeQL Documentation](https://codeql.github.com/docs/)
-- [ServiceNow DevOps Documentation](https://docs.servicenow.com/bundle/vancouver-it-service-management/page/product/enterprise-dev-ops/concept/dev-ops-change-control.html)
-- [Semantic Versioning](https://semver.org/)
-- [Keep a Changelog](https://keepachangelog.com/)
+-   [GitHub Actions Documentation](https://docs.github.com/en/actions)
+-   [CodeQL Documentation](https://codeql.github.com/docs/)
+-   [ServiceNow DevOps Documentation](https://docs.servicenow.com/bundle/vancouver-it-service-management/page/product/enterprise-dev-ops/concept/dev-ops-change-control.html)
+-   [Semantic Versioning](https://semver.org/)
+-   [Keep a Changelog](https://keepachangelog.com/)
 
 ---
 
@@ -318,7 +314,3 @@ Provides a safe testing environment to validate the release process without actu
 For issues or questions:
 - **GitHub Issues:** [Create an issue](https://github.com/ServiceNow/servicenow-devops-change/issues)
 - **ServiceNow Support:** [Now Support Portal](https://support.servicenow.com/)
-
----
-
-*Last Updated: October 2025*
