@@ -28207,9 +28207,6 @@ async function doFetch({
     status = true;
   } catch (err) {
     if (!err.response) {
-      console.error('[ServiceNow DevOps] Error without response:', err.message);
-      console.error('[ServiceNow DevOps] Error code:', err.code);
-      console.error('[ServiceNow DevOps] Endpoint attempted:', endpoint);
       throw new Error("500");
     }
 
