@@ -15,6 +15,7 @@ async function doFetch({
   abortOnChangeCreationFailure
 }) {
 
+  console.log('[ServiceNow DevOps] Polling started to fetch change info.');
 
   let githubContext = JSON.parse(githubContextStr);
 

@@ -35230,6 +35230,7 @@ const main = async() => {
 
     }
   } catch (error) {
+    console.error(error);
     core.setFailed(error.message);
   }
 }
