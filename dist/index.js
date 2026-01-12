@@ -28158,6 +28158,7 @@ async function doFetch({
   abortOnChangeCreationFailure
 }) {
 
+  console.log('[ServiceNow DevOps] Polling started to fetch change info.');
 
   let githubContext = JSON.parse(githubContextStr);
 
@@ -28165,6 +28166,11 @@ async function doFetch({
   const pipelineName = `${githubContext.repository}` + '/' + `${githubContext.workflow}`;
   const buildNumber = `${githubContext.run_id}`;
   const attemptNumber = `${githubContext.run_attempt}`;
+  
+  console.log('[ServiceNow DevOps] Pipeline name (raw):', pipelineName);
+  console.log('[ServiceNow DevOps] Pipeline name (encoded):', encodeURIComponent(pipelineName));
+  console.log('[ServiceNow DevOps] Stage name (raw):', jobname);
+  console.log('[ServiceNow DevOps] Stage name (encoded):', encodeURIComponent(jobname));
 
   let endpoint = '';
   let httpHeaders = {};
@@ -28176,7 +28182,7 @@ async function doFetch({
 
   try {
     if (token !== '') {
-      endpoint = `${instanceUrl}/api/sn_devops/v2/devops/orchestration/changeStatus?toolId=${toolId}&stageName=${jobname}&pipelineName=${pipelineName}&buildNumber=${buildNumber}&attemptNumber=${attemptNumber}`;
+      endpoint = `${instanceUrl}/api/sn_devops/v2/devops/orchestration/changeStatus?toolId=${toolId}&stageName=${encodeURIComponent(jobname)}&pipelineName=${encodeURIComponent(pipelineName)}&buildNumber=${buildNumber}&attemptNumber=${attemptNumber}`;
       const defaultHeadersForToken = {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
@@ -28185,7 +28191,7 @@ async function doFetch({
       httpHeaders = { headers: defaultHeadersForToken };
     }
     else {
-      endpoint = `${instanceUrl}/api/sn_devops/v1/devops/orchestration/changeStatus?toolId=${toolId}&stageName=${jobname}&pipelineName=${pipelineName}&buildNumber=${buildNumber}&attemptNumber=${attemptNumber}`;
+      endpoint = `${instanceUrl}/api/sn_devops/v1/devops/orchestration/changeStatus?toolId=${toolId}&stageName=${encodeURIComponent(jobname)}&pipelineName=${encodeURIComponent(pipelineName)}&buildNumber=${buildNumber}&attemptNumber=${attemptNumber}`;
       const tokenBasicAuth = `${username}:${passwd}`;
       const encodedTokenForBasicAuth = Buffer.from(tokenBasicAuth).toString('base64');
 
@@ -28196,10 +28202,14 @@ async function doFetch({
       };
       httpHeaders = { headers: defaultHeadersForBasicAuth };
     }
+    console.log('[ServiceNow DevOps] The job is under change control. A callback request is created and polling has been started to retrieve:', endpoint);
     response = await axios.get(endpoint, httpHeaders);
     status = true;
   } catch (err) {
     if (!err.response) {
+      console.error('[ServiceNow DevOps] Error without response:', err.message);
+      console.error('[ServiceNow DevOps] Error code:', err.code);
+      console.error('[ServiceNow DevOps] Endpoint attempted:', endpoint);
       throw new Error("500");
     }
 
@@ -28364,7 +28374,7 @@ async function tryFetch({
           abortOnChangeCreationFailure
         });
     } catch (error) {
-        console.error(error);
+       console.error(error);
         if (error.message == "500") {
           throw new Error(`Internal server error. An unexpected error occurred while processing the request.`);
         }
@@ -35194,9 +35204,7 @@ const main = async() => {
           else
               console.log('\n     \x1b[1m\x1b[36m' + "The job is under change control. A callback request is created and polling has been started to retrieve the change info." + '\x1b[0m\x1b[0m');
       }
-
-      console.log(JSON.stringify(result));
-
+      
       let timeout = parseInt(core.getInput('timeout') || 3600);
       let interval = parseInt(core.getInput('interval') || 100);
 
@@ -35230,7 +35238,6 @@ const main = async() => {
 
     }
   } catch (error) {
-    console.error(error);
     core.setFailed(error.message);
   }
 }
