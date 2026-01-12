@@ -33,7 +33,6 @@ async function tryFetch({
           abortOnChangeCreationFailure
         });
     } catch (error) {
-       console.error(error);
         if (error.message == "500") {
           throw new Error(`Internal server error. An unexpected error occurred while processing the request.`);
         }
