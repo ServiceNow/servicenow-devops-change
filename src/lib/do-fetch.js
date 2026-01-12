@@ -53,10 +53,14 @@ async function doFetch({
       };
       httpHeaders = { headers: defaultHeadersForBasicAuth };
     }
+    console.log('[ServiceNow DevOps] Calling endpoint:', endpoint);
     response = await axios.get(endpoint, httpHeaders);
     status = true;
   } catch (err) {
     if (!err.response) {
+      console.error('[ServiceNow DevOps] Error without response:', err.message);
+      console.error('[ServiceNow DevOps] Error code:', err.code);
+      console.error('[ServiceNow DevOps] Endpoint attempted:', endpoint);
       throw new Error("500");
     }
 
