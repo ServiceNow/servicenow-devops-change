@@ -28158,7 +28158,6 @@ async function doFetch({
   abortOnChangeCreationFailure
 }) {
 
-  console.log('[ServiceNow DevOps] Polling started to fetch change info.');
 
   let githubContext = JSON.parse(githubContextStr);
 
@@ -28166,11 +28165,6 @@ async function doFetch({
   const pipelineName = `${githubContext.repository}` + '/' + `${githubContext.workflow}`;
   const buildNumber = `${githubContext.run_id}`;
   const attemptNumber = `${githubContext.run_attempt}`;
-  
-  console.log('[ServiceNow DevOps] Pipeline name (raw):', pipelineName);
-  console.log('[ServiceNow DevOps] Pipeline name (encoded):', encodeURIComponent(pipelineName));
-  console.log('[ServiceNow DevOps] Stage name (raw):', jobname);
-  console.log('[ServiceNow DevOps] Stage name (encoded):', encodeURIComponent(jobname));
 
   let endpoint = '';
   let httpHeaders = {};
@@ -28202,7 +28196,6 @@ async function doFetch({
       };
       httpHeaders = { headers: defaultHeadersForBasicAuth };
     }
-    console.log('[ServiceNow DevOps] The job is under change control. A callback request is created and polling has been started to retrieve:', endpoint);
     response = await axios.get(endpoint, httpHeaders);
     status = true;
   } catch (err) {
