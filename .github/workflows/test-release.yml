@@ -1,0 +1,186 @@
+name: Test Release (Dry Run)
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release version tag (e.g., v2.0.0-test)'
+        required: true
+        type: string
+      release_notes:
+        description: 'Release notes/description'
+        required: true
+        type: string
+      set_as_latest:
+        description: 'Set as the latest release'
+        required: false
+        type: boolean
+        default: false
+      is_prerelease:
+        description: 'Set as a pre-release'
+        required: false
+        type: boolean
+        default: true
+
+jobs:
+  test-release:
+    name: Test Release Process (Dry Run)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      
+      - name: Validate tag format
+        run: |
+          TAG="${{ inputs.tag }}"
+          echo "Testing with tag: $TAG"
+          
+          # For testing, allow -test, -rc, -beta suffixes
+          if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+)?$ ]]; then
+            echo "Error: Tag must be in format v*.*.* or v*.*.*-suffix (e.g., v2.0.0-test)"
+            exit 1
+          fi
+          echo "✅ Tag format is valid: $TAG"
+      
+      - name: Check if tag already exists
+        run: |
+          TAG="${{ inputs.tag }}"
+          if git rev-parse "$TAG" >/dev/null 2>&1; then
+            echo "⚠️  Warning: Tag $TAG already exists (will skip tag creation)"
+            echo "TAG_EXISTS=true" >> $GITHUB_ENV
+          else
+            echo "✅ Tag $TAG is available"
+            echo "TAG_EXISTS=false" >> $GITHUB_ENV
+          fi
+      
+      - name: Verify branch is main
+        run: |
+          BRANCH=$(git rev-parse --abbrev-ref HEAD)
+          if [ "$BRANCH" != "main" ]; then
+            echo "Error: Current branch is $BRANCH, must be main"
+            exit 1
+          fi
+          echo "✅ Confirmed on main branch"
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      
+      - name: Clean and install dependencies
+        run: |
+          echo "Cleaning any existing installation..."
+          rm -rf node_modules package-lock.json
+
+          echo "Installing dependencies with npm install..."
+          npm install --prefer-offline --no-audit
+
+          echo "Verifying installation..."
+          if [ -f "node_modules/.bin/ncc" ]; then
+            echo "✅ ncc binary found"
+            ls -la node_modules/.bin/ncc
+          else
+            echo "❌ ncc binary not found"
+            echo "Contents of node_modules/.bin/:"
+            ls -la node_modules/.bin/ || echo "node_modules/.bin/ directory does not exist"
+            echo "Contents of @vercel/ncc:"
+            ls -la node_modules/@vercel/ || echo "@vercel directory not found"
+            exit 1
+          fi
+          echo "✅ Dependencies installed"
+      
+      - name: Build distribution
+        run: |
+          echo "Building distribution..."
+          npm run build
+          echo "✅ Build completed"
+      
+      - name: Verify build artifacts
+        run: |
+          if [ ! -f "dist/index.js" ]; then
+            echo "❌ Error: dist/index.js not found after build"
+            exit 1
+          fi
+          
+          echo "✅ Build artifacts verified"
+          echo "dist/index.js size: $(wc -c < dist/index.js) bytes"
+      
+      - name: Check for uncommitted changes
+        run: |
+          if [[ -n $(git status -s dist/) ]]; then
+            echo "⚠️  Warning: There are uncommitted changes in dist/"
+            git status -s dist/
+            echo ""
+            echo "In production, these would be committed and pushed"
+          else
+            echo "✅ No changes to build artifacts"
+          fi
+      
+      - name: Simulate tag creation (DRY RUN)
+        run: |
+          TAG="${{ inputs.tag }}"
+          if [ "$TAG_EXISTS" = "false" ]; then
+            echo "🔍 DRY RUN: Would create tag: $TAG"
+            echo "Command: git tag -a '$TAG' -m 'Release $TAG'"
+            echo "Command: git push origin '$TAG'"
+          else
+            echo "⏭️  Skipping tag creation (already exists)"
+          fi
+      
+      - name: Create Draft Release (TEST)
+        uses: actions/create-release@v1
+        id: create_release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ inputs.tag }}
+          release_name: ${{ inputs.tag }} (TEST)
+          body: |
+            🧪 **THIS IS A TEST RELEASE**
+            
+            ${{ inputs.release_notes }}
+            
+            ---
+            *This is a test release created for validation purposes.*
+          draft: true
+          prerelease: ${{ inputs.is_prerelease }}
+      
+      - name: Test Summary
+        run: |
+          echo "## 🧪 Test Release Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Version:** ${{ inputs.tag }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Draft Release URL:** ${{ steps.create_release.outputs.html_url }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Pre-release:** ${{ inputs.is_prerelease }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Latest Release:** ${{ inputs.set_as_latest }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### ✅ Test Results:" >> $GITHUB_STEP_SUMMARY
+          echo "- Tag format validation: PASSED" >> $GITHUB_STEP_SUMMARY
+          echo "- Branch verification: PASSED" >> $GITHUB_STEP_SUMMARY
+          echo "- Dependencies installation: PASSED" >> $GITHUB_STEP_SUMMARY
+          echo "- Build process: PASSED" >> $GITHUB_STEP_SUMMARY
+          echo "- Build artifacts: VERIFIED" >> $GITHUB_STEP_SUMMARY
+          echo "- Draft release: CREATED" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📝 Next Steps:" >> $GITHUB_STEP_SUMMARY
+          echo "1. Review the draft release at: ${{ steps.create_release.outputs.html_url }}" >> $GITHUB_STEP_SUMMARY
+          echo "2. If everything looks good, delete this draft release" >> $GITHUB_STEP_SUMMARY
+          echo "3. Run the actual 'Create Release' workflow for production" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### ⚠️ Remember:" >> $GITHUB_STEP_SUMMARY
+          echo "- This created a DRAFT release that won't be published" >> $GITHUB_STEP_SUMMARY
+          echo "- Delete the draft release after testing" >> $GITHUB_STEP_SUMMARY
+          echo "- Use a test tag like v2.0.0-test to avoid conflicts" >> $GITHUB_STEP_SUMMARY
+      
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "## ❌ Test Failed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Please check the workflow logs for details." >> $GITHUB_STEP_SUMMARY

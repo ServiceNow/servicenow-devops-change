@@ -33,7 +33,7 @@ async function doFetch({
 
   try {
     if (token !== '') {
-      endpoint = `${instanceUrl}/api/sn_devops/v2/devops/orchestration/changeStatus?toolId=${toolId}&stageName=${jobname}&pipelineName=${pipelineName}&buildNumber=${buildNumber}&attemptNumber=${attemptNumber}`;
+      endpoint = `${instanceUrl}/api/sn_devops/v2/devops/orchestration/changeStatus?toolId=${toolId}&stageName=${encodeURIComponent(jobname)}&pipelineName=${encodeURIComponent(pipelineName)}&buildNumber=${buildNumber}&attemptNumber=${attemptNumber}`;
       const defaultHeadersForToken = {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
@@ -42,7 +42,7 @@ async function doFetch({
       httpHeaders = { headers: defaultHeadersForToken };
     }
     else {
-      endpoint = `${instanceUrl}/api/sn_devops/v1/devops/orchestration/changeStatus?toolId=${toolId}&stageName=${jobname}&pipelineName=${pipelineName}&buildNumber=${buildNumber}&attemptNumber=${attemptNumber}`;
+      endpoint = `${instanceUrl}/api/sn_devops/v1/devops/orchestration/changeStatus?toolId=${toolId}&stageName=${encodeURIComponent(jobname)}&pipelineName=${encodeURIComponent(pipelineName)}&buildNumber=${buildNumber}&attemptNumber=${attemptNumber}`;
       const tokenBasicAuth = `${username}:${passwd}`;
       const encodedTokenForBasicAuth = Buffer.from(tokenBasicAuth).toString('base64');
 
