@@ -23,9 +23,9 @@
     },
     "homepage": "https://github.com/ServiceNow/servicenow-devops-change#readme",
     "dependencies": {
-        "@actions/core": "^1.10.1",
-        "@vercel/ncc": "^0.38.0",
-        "axios": "^1.7.7",
-        "follow-redirects": "^1.15.6"
+        "@actions/core": "^1.11.1",
+        "@vercel/ncc": "^0.38.3",
+        "axios": "^1.8.4",
+        "follow-redirects": "^1.15.9"
     }
 }
