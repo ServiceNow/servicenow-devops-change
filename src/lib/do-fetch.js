@@ -1,5 +1,18 @@
 const core = require('@actions/core');
 const axios = require('axios');
+const { HttpsProxyAgent } = require('https-proxy-agent');
+
+function createHttpClient() {
+    const proxyUrl = process.env.HTTPS_PROXY || process.env.https_proxy || process.env.HTTP_PROXY || process.env.http_proxy;
+    const config = {};
+    if (proxyUrl) {
+        config.httpsAgent = new HttpsProxyAgent(proxyUrl);
+        config.proxy = false;
+    }
+    return axios.create(config);
+}
+
+const httpClient = createHttpClient();
 
 async function doFetch({
   changeCreationStartTime,
@@ -53,7 +66,7 @@ async function doFetch({
       };
       httpHeaders = { headers: defaultHeadersForBasicAuth };
     }
-    response = await axios.get(endpoint, httpHeaders);
+    response = await httpClient.get(endpoint, httpHeaders);
     status = true;
   } catch (err) {
     if (!err.response) {

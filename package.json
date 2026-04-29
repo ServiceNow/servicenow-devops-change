@@ -26,6 +26,7 @@
         "@actions/core": "1.11.1",
         "@vercel/ncc": "0.38.3",
         "axios": "1.8.4",
-        "follow-redirects": "1.15.9"
+        "follow-redirects": "1.15.9",
+        "https-proxy-agent": "7.0.6"
     }
 }
