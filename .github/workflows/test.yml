@@ -13,12 +13,12 @@ jobs:
   
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
 
-    - name: Set Node.js 12.x
-      uses: actions/setup-node@v1
+    - name: Set Node.js 24.x
+      uses: actions/setup-node@v4
       with:
-        node-version: 12.x
+        node-version: 24.x
 
     - name: Install dependencies
       run: npm ci
@@ -30,7 +30,7 @@ jobs:
   changeApproval:
     name: ServiceNow Change Approval
     needs: build
-    runs-on: ubutun-latest
+    runs-on: ubuntu-latest
 
     steps:     
       - name: ServiceNow Change Approval
@@ -55,7 +55,7 @@ jobs:
   deploy:
     name: Deploy
     needs: changeApproval
-    runs-on: ubutun-latest
+    runs-on: ubuntu-latest
 
     steps:     
       - name: Run Deployment Script
