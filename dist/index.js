@@ -29071,6 +29071,8 @@ module.exports = {
 
 const core = __nccwpck_require__(7484);
 const axios = __nccwpck_require__(7269);
+const http = __nccwpck_require__(8611);
+const https = __nccwpck_require__(5692);
 
 async function createChange({
     instanceUrl,
@@ -29239,9 +29241,16 @@ async function postWithRedirects(url, data, config, maxRedirects = 5) {
     const redirectChain = [url];
 
     // Clone config/headers so cross-host header stripping never mutates the caller's object.
+    // Force a fresh TCP connection for every request (no HTTP keep-alive): Node 19+ enables
+    // keep-alive on the global agent by default, so axios would otherwise reuse a pooled socket
+    // across the loop. Some ADC/load-balancer configurations only re-evaluate routing on a new
+    // connection, which can leave a reused socket stuck redirecting to the same URL - whereas a
+    // fresh connection per request (as a standalone curl does) is handled correctly.
     const requestConfig = {
         ...config,
-        headers: { ...(config && config.headers) },
+        headers: { ...(config && config.headers), 'Connection': 'close' },
+        httpAgent: new http.Agent({ keepAlive: false }),
+        httpsAgent: new https.Agent({ keepAlive: false }),
         maxRedirects: 0,
         validateStatus: (status) => status >= 200 && status < 400
     };
