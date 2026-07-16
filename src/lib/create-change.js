@@ -97,7 +97,7 @@ async function createChange({
     else {
         throw new Error('For Basic Auth, Username and Password is mandatory for integration user authentication');
     }
-    core.debug("[ServiceNow DevOps] Sending Request for Create Change, Request Header :" + JSON.stringify({ headers: redactHeaders(httpHeaders.headers) }) + ", Payload :" + JSON.stringify(payload) + "\n");
+    core.debug("[ServiceNow DevOps] Sending Request for Create Change, Request Header :" + JSON.stringify(httpHeaders) + ", Payload :" + JSON.stringify(payload) + "\n");
     try {
         response = await postWithRedirects(postendpoint, JSON.stringify(payload), httpHeaders);
     } catch (err) {
@@ -185,6 +185,26 @@ async function postWithRedirects(url, data, config, maxRedirects = 5) {
             return response;
         }
 
+        // This is a redirect (3xx). Log the request that produced it and the full request/response
+        // headers at info level, so the redirect behavior is visible without ACTIONS_STEP_DEBUG.
+        // Headers are printed in full; the credential itself is masked in the workflow log by the
+        // earlier core.setSecret() calls. Response headers such as Set-Cookie / Server / Via / X-Cache
+        // are the key clues for why the server keeps redirecting (e.g. a cookie-based loop, or a
+        // CDN/WAF/proxy in front of the instance) and why a manual curl may behave differently.
+        const sentMethod = ((response.config && response.config.method) || 'post').toUpperCase();
+        let sentHeaders;
+        try {
+            if (response.request && typeof response.request.getHeaders === 'function') {
+                sentHeaders = response.request.getHeaders();
+            }
+        } catch (e) { /* getHeaders() not available on this request type; fall back below */ }
+        if (!sentHeaders) {
+            sentHeaders = (response.config && response.config.headers) || requestConfig.headers;
+        }
+        core.info(`[ServiceNow DevOps] Redirect (HTTP ${response.status}) received for ${sentMethod} ${currentUrl}`);
+        core.info(`[ServiceNow DevOps]   request headers:  ${JSON.stringify(sentHeaders)}`);
+        core.info(`[ServiceNow DevOps]   response headers: ${JSON.stringify(response.headers)}`);
+
         const location = response.headers && response.headers.location;
         if (!location) {
             throw new Error(`Redirect status ${response.status} received from ServiceNow but no 'Location' header was returned.`);
@@ -200,22 +220,7 @@ async function postWithRedirects(url, data, config, maxRedirects = 5) {
         const redirectUrl = new URL(location, currentUrl).href;
         redirectsFollowed++;
         redirectChain.push(redirectUrl);
-        // Logged at info level (not debug) so the redirect chain is visible without enabling ACTIONS_STEP_DEBUG.
-        core.info(`[ServiceNow DevOps] Following redirect #${redirectsFollowed} (HTTP ${response.status}) to ${redirectUrl}`);
-
-        // Log the method and the headers actually sent on the request that was redirected (token redacted).
-        // Helps diagnose why the server keeps redirecting (e.g. method or header differences vs a working curl).
-        const sentMethod = ((response.config && response.config.method) || 'post').toUpperCase();
-        let sentHeaders;
-        try {
-            if (response.request && typeof response.request.getHeaders === 'function') {
-                sentHeaders = response.request.getHeaders();
-            }
-        } catch (e) { /* getHeaders() not available on this request type; fall back below */ }
-        if (!sentHeaders) {
-            sentHeaders = (response.config && response.config.headers) || requestConfig.headers;
-        }
-        core.info(`[ServiceNow DevOps]   redirected request was: ${sentMethod} ${currentUrl} | headers: ${JSON.stringify(redactHeaders(sentHeaders))}`);
+        core.info(`[ServiceNow DevOps] Following redirect #${redirectsFollowed} to ${redirectUrl}`);
 
         // Drop the Authorization header when redirected to a different host to avoid leaking credentials.
         const currentHost = new URL(currentUrl).hostname;
@@ -228,24 +233,6 @@ async function postWithRedirects(url, data, config, maxRedirects = 5) {
 
         currentUrl = redirectUrl;
     }
-}
-
-/**
- * Returns a shallow copy of a header object with the Authorization value replaced,
- * so headers can be logged without leaking the token. Accepts plain objects,
- * Node's ClientRequest.getHeaders() output, or an AxiosHeaders instance.
- */
-function redactHeaders(headers) {
-    if (!headers) {
-        return headers;
-    }
-    const plain = (typeof headers.toJSON === 'function') ? headers.toJSON() : { ...headers };
-    for (const key of Object.keys(plain)) {
-        if (key.toLowerCase() === 'authorization') {
-            plain[key] = '***REDACTED***';
-        }
-    }
-    return plain;
 }
 
 function displayErrorMsg(errMsg) {
