@@ -29276,6 +29276,18 @@ async function postWithRedirects(url, data, config, maxRedirects = 5) {
         core.info(`[ServiceNow DevOps]   request headers:  ${JSON.stringify(sentHeaders)}`);
         core.info(`[ServiceNow DevOps]   response headers: ${JSON.stringify(response.headers)}`);
 
+        // The redirect response body (often an ADC/proxy HTML page) can carry a reason or signature
+        // that explains why the request is being redirected. Truncated so an unexpectedly large body
+        // cannot flood the log.
+        let responseBody = response.data;
+        if (responseBody !== undefined && responseBody !== null && responseBody !== '') {
+            if (typeof responseBody !== 'string') {
+                try { responseBody = JSON.stringify(responseBody); } catch (e) { responseBody = String(responseBody); }
+            }
+            const truncated = responseBody.length > 1000 ? `${responseBody.slice(0, 1000)}... [truncated ${responseBody.length - 1000} chars]` : responseBody;
+            core.info(`[ServiceNow DevOps]   response body: ${truncated}`);
+        }
+
         const location = response.headers && response.headers.location;
         if (!location) {
             throw new Error(`Redirect status ${response.status} received from ServiceNow but no 'Location' header was returned.`);
