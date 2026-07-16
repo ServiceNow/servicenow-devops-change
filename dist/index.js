@@ -29140,6 +29140,8 @@ async function createChange({
         throw new Error('Either secret token or integration username, password is needed for integration user authentication');
     }
     else if (token !== '') {
+        // Register the token so GitHub masks it everywhere in the workflow log.
+        core.setSecret(token);
         postendpoint = `${instanceUrl}/api/sn_devops/v2/devops/orchestration/changeControl?toolId=${toolId}&toolType=github_server`;
         const defaultHeadersForToken = {
             'Content-Type': 'application/json',
@@ -29152,6 +29154,9 @@ async function createChange({
         postendpoint = `${instanceUrl}/api/sn_devops/v1/devops/orchestration/changeControl?toolId=${toolId}&toolType=github_server`;
         const tokenBasicAuth = `${username}:${passwd}`;
         const encodedTokenForBasicAuth = Buffer.from(tokenBasicAuth).toString('base64');
+        // Register the credentials so GitHub masks them everywhere in the workflow log.
+        core.setSecret(passwd);
+        core.setSecret(encodedTokenForBasicAuth);
 
         const defaultHeadersForBasicAuth = {
             'Content-Type': 'application/json',
@@ -29163,7 +29168,7 @@ async function createChange({
     else {
         throw new Error('For Basic Auth, Username and Password is mandatory for integration user authentication');
     }
-    core.debug("[ServiceNow DevOps] Sending Request for Create Change, Request Header :" + JSON.stringify(httpHeaders) + ", Payload :" + JSON.stringify(payload) + "\n");
+    core.debug("[ServiceNow DevOps] Sending Request for Create Change, Request Header :" + JSON.stringify({ headers: redactHeaders(httpHeaders.headers) }) + ", Payload :" + JSON.stringify(payload) + "\n");
     try {
         response = await postWithRedirects(postendpoint, JSON.stringify(payload), httpHeaders);
     } catch (err) {
@@ -29269,6 +29274,20 @@ async function postWithRedirects(url, data, config, maxRedirects = 5) {
         // Logged at info level (not debug) so the redirect chain is visible without enabling ACTIONS_STEP_DEBUG.
         core.info(`[ServiceNow DevOps] Following redirect #${redirectsFollowed} (HTTP ${response.status}) to ${redirectUrl}`);
 
+        // Log the method and the headers actually sent on the request that was redirected (token redacted).
+        // Helps diagnose why the server keeps redirecting (e.g. method or header differences vs a working curl).
+        const sentMethod = ((response.config && response.config.method) || 'post').toUpperCase();
+        let sentHeaders;
+        try {
+            if (response.request && typeof response.request.getHeaders === 'function') {
+                sentHeaders = response.request.getHeaders();
+            }
+        } catch (e) { /* getHeaders() not available on this request type; fall back below */ }
+        if (!sentHeaders) {
+            sentHeaders = (response.config && response.config.headers) || requestConfig.headers;
+        }
+        core.info(`[ServiceNow DevOps]   redirected request was: ${sentMethod} ${currentUrl} | headers: ${JSON.stringify(redactHeaders(sentHeaders))}`);
+
         // Drop the Authorization header when redirected to a different host to avoid leaking credentials.
         const currentHost = new URL(currentUrl).hostname;
         const redirectHost = new URL(redirectUrl).hostname;
@@ -29280,6 +29299,24 @@ async function postWithRedirects(url, data, config, maxRedirects = 5) {
 
         currentUrl = redirectUrl;
     }
+}
+
+/**
+ * Returns a shallow copy of a header object with the Authorization value replaced,
+ * so headers can be logged without leaking the token. Accepts plain objects,
+ * Node's ClientRequest.getHeaders() output, or an AxiosHeaders instance.
+ */
+function redactHeaders(headers) {
+    if (!headers) {
+        return headers;
+    }
+    const plain = (typeof headers.toJSON === 'function') ? headers.toJSON() : { ...headers };
+    for (const key of Object.keys(plain)) {
+        if (key.toLowerCase() === 'authorization') {
+            plain[key] = '***REDACTED***';
+        }
+    }
+    return plain;
 }
 
 function displayErrorMsg(errMsg) {
