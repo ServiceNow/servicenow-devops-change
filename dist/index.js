@@ -4978,6 +4978,18 @@ var hasOwn = __nccwpck_require__(4076);
 var populate = __nccwpck_require__(1835);
 
 /**
+ * Escape CR, LF, and `"` in a multipart `name`/`filename` parameter, so a field
+ * name or filename can not break out of its header line to inject headers or
+ * smuggle additional parts. Matches the WHATWG HTML multipart/form-data encoding.
+ *
+ * @param {string} str - the parameter value to escape
+ * @returns {string} the escaped value
+ */
+function escapeHeaderParam(str) {
+  return String(str).replace(/\r/g, '%0D').replace(/\n/g, '%0A').replace(/"/g, '%22');
+}
+
+/**
  * Create readable "multipart/form-data" streams.
  * Can be used to submit forms
  * and file uploads to other web applications.
@@ -5142,7 +5154,7 @@ FormData.prototype._multiPartHeader = function (field, value, options) {
   var contents = '';
   var headers = {
     // add custom disposition as third element or keep it two elements if not
-    'Content-Disposition': ['form-data', 'name="' + field + '"'].concat(contentDisposition || []),
+    'Content-Disposition': ['form-data', 'name="' + escapeHeaderParam(field) + '"'].concat(contentDisposition || []),
     // if no content type. allow it to be empty array
     'Content-Type': [].concat(contentType || [])
   };
@@ -5196,7 +5208,7 @@ FormData.prototype._getContentDisposition = function (value, options) { // eslin
   }
 
   if (filename) {
-    return 'filename="' + filename + '"';
+    return 'filename="' + escapeHeaderParam(filename) + '"';
   }
 };
 
@@ -29218,6 +29230,9 @@ async function createChange({
 async function postWithRedirects(url, data, config, maxRedirects = 5) {
     let currentUrl = url;
 
+    // Track the full redirect chain so a failure can report every hop in one place.
+    const redirectChain = [url];
+
     // Clone config/headers so cross-host header stripping never mutates the caller's object.
     const requestConfig = {
         ...config,
@@ -29226,7 +29241,9 @@ async function postWithRedirects(url, data, config, maxRedirects = 5) {
         validateStatus: (status) => status >= 200 && status < 400
     };
 
-    for (let redirectCount = 0; redirectCount <= maxRedirects; redirectCount++) {
+    let redirectsFollowed = 0;
+
+    for (;;) {
         const response = await axios.post(currentUrl, data, requestConfig);
 
         // Not a redirect -> this is the final response.
@@ -29239,9 +29256,18 @@ async function postWithRedirects(url, data, config, maxRedirects = 5) {
             throw new Error(`Redirect status ${response.status} received from ServiceNow but no 'Location' header was returned.`);
         }
 
+        // Another redirect is being requested but we have already followed the maximum allowed.
+        if (redirectsFollowed >= maxRedirects) {
+            core.info(`[ServiceNow DevOps] Redirect chain (${redirectChain.length} URLs): ${redirectChain.join(' -> ')}`);
+            throw new Error(`Maximum number of redirects (${maxRedirects}) exceeded while calling the ServiceNow Change Control API.`);
+        }
+
         // Resolve relative redirect targets against the current URL.
         const redirectUrl = new URL(location, currentUrl).href;
-        core.debug(`[ServiceNow DevOps] Following redirect (${response.status}) to ${redirectUrl}`);
+        redirectsFollowed++;
+        redirectChain.push(redirectUrl);
+        // Logged at info level (not debug) so the redirect chain is visible without enabling ACTIONS_STEP_DEBUG.
+        core.info(`[ServiceNow DevOps] Following redirect #${redirectsFollowed} (HTTP ${response.status}) to ${redirectUrl}`);
 
         // Drop the Authorization header when redirected to a different host to avoid leaking credentials.
         const currentHost = new URL(currentUrl).hostname;
@@ -29249,13 +29275,11 @@ async function postWithRedirects(url, data, config, maxRedirects = 5) {
         if (currentHost !== redirectHost) {
             delete requestConfig.headers['Authorization'];
             delete requestConfig.headers['authorization'];
-            core.debug('[ServiceNow DevOps] Dropped Authorization header for cross-host redirect.');
+            core.info(`[ServiceNow DevOps] Dropped Authorization header for cross-host redirect (${currentHost} -> ${redirectHost}).`);
         }
 
         currentUrl = redirectUrl;
     }
-
-    throw new Error(`Maximum number of redirects (${maxRedirects}) exceeded while calling the ServiceNow Change Control API.`);
 }
 
 function displayErrorMsg(errMsg) {
