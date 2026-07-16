@@ -94,7 +94,7 @@ async function createChange({
     }
     core.debug("[ServiceNow DevOps] Sending Request for Create Change, Request Header :" + JSON.stringify(httpHeaders) + ", Payload :" + JSON.stringify(payload) + "\n");
     try {
-        response = await axios.post(postendpoint, JSON.stringify(payload), httpHeaders);
+        response = await postWithRedirects(postendpoint, JSON.stringify(payload), httpHeaders);
     } catch (err) {
         core.debug("[ServiceNow DevOps] Detailed error information:"+ JSON.stringify(err, null, 2));
         displayErrorMsg(`[ServiceNow DevOps] Error occurred with create change call  - Code: ${err.code}, Message: ${err.message}`);
@@ -145,6 +145,58 @@ async function createChange({
         }
     }
     return response
+}
+
+/**
+ * Performs a POST request and follows HTTP redirects (3xx) manually.
+ *
+ * axios (via follow-redirects) can fail with ERR_FR_TOO_MANY_REDIRECTS when a
+ * ServiceNow instance sits behind a proxy/load balancer that returns a redirect
+ * (e.g. host canonicalization or http->https). By following the 'Location'
+ * header ourselves we can re-issue the POST with the original body and headers
+ * preserved, breaking out cleanly once a non-redirect response is received.
+ */
+async function postWithRedirects(url, data, config, maxRedirects = 5) {
+    let currentUrl = url;
+
+    // Clone config/headers so cross-host header stripping never mutates the caller's object.
+    const requestConfig = {
+        ...config,
+        headers: { ...(config && config.headers) },
+        maxRedirects: 0,
+        validateStatus: (status) => status >= 200 && status < 400
+    };
+
+    for (let redirectCount = 0; redirectCount <= maxRedirects; redirectCount++) {
+        const response = await axios.post(currentUrl, data, requestConfig);
+
+        // Not a redirect -> this is the final response.
+        if (response.status < 300) {
+            return response;
+        }
+
+        const location = response.headers && response.headers.location;
+        if (!location) {
+            throw new Error(`Redirect status ${response.status} received from ServiceNow but no 'Location' header was returned.`);
+        }
+
+        // Resolve relative redirect targets against the current URL.
+        const redirectUrl = new URL(location, currentUrl).href;
+        core.debug(`[ServiceNow DevOps] Following redirect (${response.status}) to ${redirectUrl}`);
+
+        // Drop the Authorization header when redirected to a different host to avoid leaking credentials.
+        const currentHost = new URL(currentUrl).hostname;
+        const redirectHost = new URL(redirectUrl).hostname;
+        if (currentHost !== redirectHost) {
+            delete requestConfig.headers['Authorization'];
+            delete requestConfig.headers['authorization'];
+            core.debug('[ServiceNow DevOps] Dropped Authorization header for cross-host redirect.');
+        }
+
+        currentUrl = redirectUrl;
+    }
+
+    throw new Error(`Maximum number of redirects (${maxRedirects}) exceeded while calling the ServiceNow Change Control API.`);
 }
 
 function displayErrorMsg(errMsg) {
