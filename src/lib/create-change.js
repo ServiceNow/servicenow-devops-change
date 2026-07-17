@@ -2,6 +2,14 @@ const core = require('@actions/core');
 const axios = require('axios');
 const http = require('http');
 const https = require('https');
+const { HttpsProxyAgent } = require('https-proxy-agent');
+
+// Axios' built-in proxy handling issues absolute-form HTTP requests, which some enterprise
+// proxies (e.g. Visa) reject with 400 Bad Request. When HTTPS_PROXY/HTTP_PROXY is set, we
+// route through the proxy ourselves via a CONNECT tunnel (https-proxy-agent) instead.
+function getProxyUrl() {
+    return process.env.HTTPS_PROXY || process.env.https_proxy || process.env.HTTP_PROXY || process.env.http_proxy;
+}
 
 async function createChange({
     instanceUrl,
@@ -175,11 +183,17 @@ async function postWithRedirects(url, data, config, maxRedirects = 5) {
     // across the loop. Some ADC/load-balancer configurations only re-evaluate routing on a new
     // connection, which can leave a reused socket stuck redirecting to the same URL - whereas a
     // fresh connection per request (as a standalone curl does) is handled correctly.
+    //
+    // When a corporate proxy is configured (HTTPS_PROXY/HTTP_PROXY), route through it via a
+    // CONNECT tunnel instead of a plain https.Agent, and disable axios' own proxy handling
+    // (config.proxy) so the two don't fight over how the request reaches the proxy.
+    const proxyUrl = getProxyUrl();
     const requestConfig = {
         ...config,
         headers: { ...(config && config.headers), 'Connection': 'close' },
         httpAgent: new http.Agent({ keepAlive: false }),
-        httpsAgent: new https.Agent({ keepAlive: false }),
+        httpsAgent: proxyUrl ? new HttpsProxyAgent(proxyUrl, { keepAlive: false }) : new https.Agent({ keepAlive: false }),
+        proxy: proxyUrl ? false : undefined,
         maxRedirects: 0,
         validateStatus: (status) => status >= 200 && status < 400
     };
