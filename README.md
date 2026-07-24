@@ -152,6 +152,46 @@ This change request sys id is provided as output upon successful creation of the
 
 ServiceNow customers may request support through the [Now Support (HI) portal](https://support.servicenow.com/nav_to.do?uri=%2Fnow_support_home.do).
 
+## HTTPS Proxy Support
+
+This action supports routing all HTTP/HTTPS traffic through a corporate proxy server. The action automatically detects proxy configuration from the following environment variables (checked in order):
+
+| Environment Variable | Description |
+|---|---|
+| `HTTPS_PROXY` | Proxy URL for HTTPS requests (recommended) |
+| `https_proxy` | Lowercase alternative for HTTPS proxy |
+| `HTTP_PROXY` | Proxy URL for HTTP requests |
+| `http_proxy` | Lowercase alternative for HTTP proxy |
+
+Set any of these environment variables in your workflow to enable proxy support. The proxy URL format is:
+
+```
+http://<host>:<port>
+http://<username>:<password>@<host>:<port>
+```
+
+### Example usage with proxy
+
+```yaml
+jobs:
+  changeApproval:
+    name: ServiceNow Change Approval
+    runs-on: ubuntu-latest
+    env:
+      HTTPS_PROXY: ${{ secrets.HTTPS_PROXY_URL }}
+    steps:
+      - name: ServiceNow Change Approval
+        uses: ServiceNow/servicenow-devops-change@v6.x
+        with:
+          devops-integration-token: ${{ secrets.SN_DEVOPS_INTEGRATION_TOKEN }}
+          instance-url: ${{ secrets.SN_INSTANCE_URL }}
+          tool-id: ${{ secrets.SN_ORCHESTRATION_TOOL_ID }}
+          context-github: ${{ toJSON(github) }}
+          job-name: 'ServiceNow Change Approval'
+```
+
+> **Note:** The proxy must support HTTP CONNECT tunneling for HTTPS traffic. If the `HTTPS_PROXY` (or any of the above) environment variable is not set, the action connects directly without a proxy.
+
 ## Governance Model
 
 Initially, ServiceNow product management and engineering representatives will own governance of these integrations to ensure consistency with roadmap direction. In the longer term, we hope that contributors from customers and our community developers will help to guide prioritization and maintenance of these integrations. At that point, this governance model can be updated to reflect a broader pool of contributors and maintainers.
