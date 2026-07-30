@@ -29267,6 +29267,8 @@ async function doFetch({
   try {
     if (token !== '') {
       endpoint = `${instanceUrl}/api/sn_devops/v2/devops/orchestration/changeStatus?toolId=${toolId}&stageName=${encodeURIComponent(jobname)}&pipelineName=${encodeURIComponent(pipelineName)}&buildNumber=${buildNumber}&attemptNumber=${attemptNumber}`;
+      console.log('[ServiceNow DevOps] Endpoint constructed using v2 (token-based auth) branch.');
+      console.log(`[ServiceNow DevOps] Token present: ${!!token}, length: ${token.length}`);
       const defaultHeadersForToken = {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
@@ -29276,6 +29278,7 @@ async function doFetch({
     }
     else {
       endpoint = `${instanceUrl}/api/sn_devops/v1/devops/orchestration/changeStatus?toolId=${toolId}&stageName=${encodeURIComponent(jobname)}&pipelineName=${encodeURIComponent(pipelineName)}&buildNumber=${buildNumber}&attemptNumber=${attemptNumber}`;
+      console.log('[ServiceNow DevOps] Endpoint constructed using v1 (basic auth) branch.');
       const tokenBasicAuth = `${username}:${passwd}`;
       const encodedTokenForBasicAuth = Buffer.from(tokenBasicAuth).toString('base64');
 
@@ -29286,12 +29289,16 @@ async function doFetch({
       };
       httpHeaders = { headers: defaultHeadersForBasicAuth };
     }
+    console.log(`[ServiceNow DevOps] Calling endpoint: ${endpoint}`);
     response = await axios.get(endpoint, httpHeaders);
     status = true;
   } catch (err) {
     if (!err.response) {
+      console.log(`[ServiceNow DevOps] Request failed with no response object. Error: ${err.message}`);
       throw new Error("500");
     }
+
+    console.log(`[ServiceNow DevOps] Received error response. Status: ${err.response.status}, Body: ${JSON.stringify(err.response.data)}`);
 
     if (!codesAllowedArr.includes(err.response.status)) {
       throw new Error("500");
@@ -29303,11 +29310,14 @@ async function doFetch({
 
     if (err.response.status == 400) {
       let responseData = err.response.data;
+      console.log(`[ServiceNow DevOps] 400 Bad Request. Full response body: ${JSON.stringify(responseData)}`);
       if (responseData && responseData.result && responseData.result.errorMessage) {//Other technical error messages
         let errMsg = responseData.result.errorMessage;
+        console.log(`[ServiceNow DevOps] 400 error message from API: ${errMsg}`);
         throw new Error(JSON.stringify({ "status": "error", "details": errMsg }));
       }
 
+      console.log('[ServiceNow DevOps] 400 error did not contain a result.errorMessage field.');
       throw new Error("400");
     }
 
