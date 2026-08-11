@@ -1,5 +1,18 @@
 const core = require('@actions/core');
 const axios = require('axios');
+const { HttpsProxyAgent } = require('https-proxy-agent');
+
+function createHttpClient() {
+    const proxyUrl = process.env.HTTPS_PROXY || process.env.https_proxy || process.env.HTTP_PROXY || process.env.http_proxy;
+    const config = {};
+    if (proxyUrl) {
+        config.httpsAgent = new HttpsProxyAgent(proxyUrl);
+        config.proxy = false;
+    }
+    return axios.create(config);
+}
+
+const httpClient = createHttpClient();
 
 async function createChange({
     instanceUrl,
@@ -94,7 +107,7 @@ async function createChange({
     }
     core.debug("[ServiceNow DevOps] Sending Request for Create Change, Request Header :" + JSON.stringify(httpHeaders) + ", Payload :" + JSON.stringify(payload) + "\n");
     try {
-        response = await axios.post(postendpoint, JSON.stringify(payload), httpHeaders);
+        response = await httpClient.post(postendpoint, JSON.stringify(payload), httpHeaders);
     } catch (err) {
         core.debug("[ServiceNow DevOps] Detailed error information:"+ JSON.stringify(err, null, 2));
         displayErrorMsg(`[ServiceNow DevOps] Error occurred with create change call  - Code: ${err.code}, Message: ${err.message}`);
