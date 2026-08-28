@@ -1,5 +1,6 @@
 const core = require('@actions/core');
 const { doFetch } = require('./do-fetch');
+const { ABORT_REASON, createTaggedError } = require('./abort-reason');
 
 async function tryFetch({
   start = +new Date(),
@@ -34,27 +35,27 @@ async function tryFetch({
         });
     } catch (error) {
         if (error.message == "500") {
-          throw new Error(`Internal server error. An unexpected error occurred while processing the request.`);
+          throw createTaggedError(`Internal server error. An unexpected error occurred while processing the request.`, ABORT_REASON.SERVICENOW_ERROR);
         }
 
         if (error.message == "400") {
-          throw new Error(`Bad Request. Missing inputs to process the request.`);
+          throw createTaggedError(`Bad Request. Missing inputs to process the request.`, ABORT_REASON.SERVICENOW_ERROR);
         }
 
         if (error.message == "401") {
-          throw new Error(`The user credentials are incorrect.`);
+          throw createTaggedError(`The user credentials are incorrect.`, ABORT_REASON.SERVICENOW_ERROR);
         }
 
         if (error.message == "403") {
-          throw new Error(`Forbidden. The user does not have the role to process the request.`);
+          throw createTaggedError(`Forbidden. The user does not have the role to process the request.`, ABORT_REASON.SERVICENOW_ERROR);
         }
 
         if (error.message == "404") {
-          throw new Error(`Not found. The requested item was not found.`);
+          throw createTaggedError(`Not found. The requested item was not found.`, ABORT_REASON.SERVICENOW_ERROR);
         }
 
         if (error.message == "202") {
-          throw new Error("****Change has been created but the change is either rejected or cancelled.");
+          throw createTaggedError("****Change has been created but the change is either rejected or cancelled.", ABORT_REASON.SERVICENOW_ERROR);
         }
 
         if (error.message == "ChangeCreationFailure_DontFailTheStep") {
@@ -67,8 +68,10 @@ async function tryFetch({
           if (errorObject && errorObject.statusCode == "201") {
              prevPollChangeDetails = errorObject.details;
           }else if(errorObject && errorObject.status == "error"){
-            //throws error incase of status is 'error'
-             throw new Error(errorObject.details);
+            //throws error incase of status is 'error'. reason is carried over
+            //from do-fetch.js so a changeCreationTimeOut abort is still
+            //reported as ABORT_REASON.TIMEOUT once it reaches main.js.
+             throw createTaggedError(errorObject.details, errorObject.reason || ABORT_REASON.SERVICENOW_ERROR);
           }
         }
 
@@ -80,7 +83,7 @@ async function tryFetch({
              console.error('\n    \x1b[38;5;214m Timeout occured after '+timeout+' seconds but pipeline will coninue since abortOnChangeStepTimeout flag is false \x1b[38;5;214m');
              return;
           }
-             throw new Error(`Timeout after ${timeout} seconds.Workflow execution is aborted since abortOnChangeStepTimeout flag is true`);
+             throw createTaggedError(`Timeout after ${timeout} seconds.Workflow execution is aborted since abortOnChangeStepTimeout flag is true`, ABORT_REASON.TIMEOUT);
         }
 
 

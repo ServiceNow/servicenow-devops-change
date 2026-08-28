@@ -1,5 +1,6 @@
 const core = require('@actions/core');
 const axios = require('axios');
+const { ABORT_REASON, createTaggedError } = require('./abort-reason');
 
 async function createChange({
     instanceUrl,
@@ -26,7 +27,7 @@ async function createChange({
         changeRequestDetails = JSON.parse(changeRequestDetailsStr);
     } catch (e) {
         displayErrorMsg(`[ServiceNow DevOps] Error occured with message ${e}`);
-        throw new Error("Failed parsing changeRequestDetails");
+        throw createTaggedError("Failed parsing changeRequestDetails", ABORT_REASON.SERVICENOW_ERROR);
     }
 
     try {
@@ -34,14 +35,14 @@ async function createChange({
             deploymentGateDetails = JSON.parse(deploymentGateStr);
     } catch (e) {
         displayErrorMsg(`[ServiceNow DevOps] Error occured with message ${e}`);
-        throw new Error("Failed parsing deploymentGateDetails");
+        throw createTaggedError("Failed parsing deploymentGateDetails", ABORT_REASON.SERVICENOW_ERROR);
     }
 
     try {
         githubContext = JSON.parse(githubContextStr);
     } catch (e) {
         displayErrorMsg(`[ServiceNow DevOps] Error occured with message ${e}`);
-        throw new Error("Exception parsing github context");
+        throw createTaggedError("Exception parsing github context", ABORT_REASON.SERVICENOW_ERROR);
     }
 
     try {
@@ -62,11 +63,11 @@ async function createChange({
         }
     } catch (err) {
         console.log(`[ServiceNow DevOps] Error occured with message ${err}`);
-        throw new Error("Exception preparing payload");
+        throw createTaggedError("Exception preparing payload", ABORT_REASON.SERVICENOW_ERROR);
     }
 
     if (token === '' && username === '' && passwd === '') {
-        throw new Error('Either secret token or integration username, password is needed for integration user authentication');
+        throw createTaggedError('Either secret token or integration username, password is needed for integration user authentication', ABORT_REASON.SERVICENOW_ERROR);
     }
     else if (token !== '') {
         postendpoint = `${instanceUrl}/api/sn_devops/v2/devops/orchestration/changeControl?toolId=${toolId}&toolType=github_server`;
@@ -90,7 +91,7 @@ async function createChange({
         httpHeaders = { headers: defaultHeadersForBasicAuth };
     }
     else {
-        throw new Error('For Basic Auth, Username and Password is mandatory for integration user authentication');
+        throw createTaggedError('For Basic Auth, Username and Password is mandatory for integration user authentication', ABORT_REASON.SERVICENOW_ERROR);
     }
     core.debug("[ServiceNow DevOps] Sending Request for Create Change, Request Header :" + JSON.stringify(httpHeaders) + ", Payload :" + JSON.stringify(payload) + "\n");
     try {
@@ -99,27 +100,27 @@ async function createChange({
         core.debug("[ServiceNow DevOps] Detailed error information:"+ JSON.stringify(err, null, 2));
         displayErrorMsg(`[ServiceNow DevOps] Error occurred with create change call  - Code: ${err.code}, Message: ${err.message}`);
         if (err.code === 'ECONNABORTED') {
-            throw new Error(`change creation timeout after ${err.config.timeout}s`);
+            throw createTaggedError(`change creation timeout after ${err.config.timeout}s`, ABORT_REASON.TIMEOUT);
         }
 
         if (err.message.includes('ECONNREFUSED') || err.message.includes('ENOTFOUND')) {
-            throw new Error('Invalid ServiceNow Instance URL. Please correct the URL and try again.');
+            throw createTaggedError('Invalid ServiceNow Instance URL. Please correct the URL and try again.', ABORT_REASON.SERVICENOW_ERROR);
         }
 
         if (err.message.includes('401')) {
-            throw new Error('Invalid Credentials. Please correct the credentials and try again.');
+            throw createTaggedError('Invalid Credentials. Please correct the credentials and try again.', ABORT_REASON.SERVICENOW_ERROR);
         }
 
         if (err.message.includes('405')) {
-            throw new Error('Response Code from ServiceNow is 405. Please correct ServiceNow logs for more details.');
+            throw createTaggedError('Response Code from ServiceNow is 405. Please correct ServiceNow logs for more details.', ABORT_REASON.SERVICENOW_ERROR);
         }
 
         if (!err.response) {
-            throw new Error('No response from ServiceNow. Please check ServiceNow logs for more details.');
+            throw createTaggedError('No response from ServiceNow. Please check ServiceNow logs for more details.', ABORT_REASON.SERVICENOW_ERROR);
         }
 
         if (err.response.status == 500) {
-            throw new Error('Response Code from ServiceNow is 500. Please check ServiceNow logs for more details.')
+            throw createTaggedError('Response Code from ServiceNow is 500. Please check ServiceNow logs for more details.', ABORT_REASON.SERVICENOW_ERROR)
         }
 
         if (err.response.status == 400) {
@@ -141,7 +142,7 @@ async function createChange({
                 }
             }
 
-            throw new Error(errMsg);
+            throw createTaggedError(errMsg, ABORT_REASON.SERVICENOW_ERROR);
         }
     }
     return response

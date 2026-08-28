@@ -54,6 +54,14 @@ outputs:
     description: 'This change request number is provided as output upon successful creation of the change.'
   change-request-sys-id:
     description: 'This change request sys id is provided as output upon successful creation of the change.'
+  abort-reason:
+    description: >
+      Only set when the action fails. One of: "timeout" - the action gave up
+      waiting (changeCreationTimeOut, the abortOnChangeStepTimeout polling
+      timeout, or the create request itself timing out); "servicenow-error" -
+      any other failure (an API error response, invalid credentials/instance
+      URL, a rejected/cancelled change, a change that reached a failed/error
+      state, or malformed input).
 branding:
   icon: 'refresh-ccw'
   color: 'green'
