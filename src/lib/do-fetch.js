@@ -1,5 +1,6 @@
 const core = require('@actions/core');
 const axios = require('axios');
+const { ABORT_REASON } = require('./abort-reason');
 
 async function doFetch({
   changeCreationStartTime,
@@ -72,7 +73,7 @@ async function doFetch({
       let responseData = err.response.data;
       if (responseData && responseData.result && responseData.result.errorMessage) {//Other technical error messages
         let errMsg = responseData.result.errorMessage;
-        throw new Error(JSON.stringify({ "status": "error", "details": errMsg }));
+        throw new Error(JSON.stringify({ "status": "error", "reason": ABORT_REASON.SERVICENOW_ERROR, "details": errMsg }));
       }
 
       throw new Error("400");
@@ -118,7 +119,7 @@ async function doFetch({
           if ((+new Date() - changeCreationStartTime) > (changeCreationTimeOut * 1000)) {
               if (abortOnChangeCreationFailure) {
                 let errMsg = `Timeout after ${changeCreationTimeOut} seconds.Workflow execution is aborted since abortOnChangeCreationFailure flag is true`;
-                throw new Error(JSON.stringify({ "status": "error", "details": errMsg }));
+                throw new Error(JSON.stringify({ "status": "error", "reason": ABORT_REASON.TIMEOUT, "details": errMsg }));
               }
               else { 
                 console.error('\n    \x1b[38;5;214m Timeout occured after '+changeCreationTimeOut+' seconds but pipeline will coninue since abortOnChangeCreationFailure flag is false \x1b[38;5;214m');
@@ -145,7 +146,7 @@ async function doFetch({
               }
               throw new Error(JSON.stringify({ "statusCode": "201", "details": currChangeDetails }));
           } else if ((changeState == "failed") || (changeState == "error")) {
-              throw new Error(JSON.stringify({ "status": "error", "details": currChangeDetails.details }));
+              throw new Error(JSON.stringify({ "status": "error", "reason": ABORT_REASON.SERVICENOW_ERROR, "details": currChangeDetails.details }));
           } else if (changeState == "rejected" || changeState == "canceled_by_user") {
               if (isChangeDetailsChanged(prevPollChangeDetails, currChangeDetails)) {
                 console.log('\n \x1b[1m\x1b[32m' + JSON.stringify(currChangeDetails) + '\x1b[0m\x1b[0m');

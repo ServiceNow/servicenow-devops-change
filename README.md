@@ -146,6 +146,13 @@ This change request number is provided as output upon successful creation of the
 
 This change request sys id is provided as output upon successful creation of the change.
 
+### `abort-reason`
+
+Only set when the action fails. One of:
+
+- `timeout` - the action gave up waiting: `changeCreationTimeOut` expired, the `abortOnChangeStepTimeout` polling timeout expired, or the create request itself timed out at the HTTP layer.
+- `servicenow-error` - any other failure: an API error response, invalid credentials/instance URL, a rejected/cancelled change, a change that reached a failed/error state, or malformed input.
+
 # Notices
 
 ## Support Model

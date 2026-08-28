@@ -5,7 +5,8 @@
     "description": "A Github Action to pause/resume workflow run for a ServiceNow change approval.",
     "private": false,
     "scripts": {
-        "build": "ncc build src/main.js"
+        "build": "ncc build src/main.js",
+        "test": "jest"
     },
     "repository": {
         "type": "git",
@@ -27,5 +28,8 @@
         "@vercel/ncc": "0.38.3",
         "axios": "1.8.4",
         "follow-redirects": "1.15.9"
+    },
+    "devDependencies": {
+        "jest": "30.4.2"
     }
 }

@@ -2,6 +2,7 @@ const core = require('@actions/core');
 const axios = require('axios');
 const { createChange } = require('./lib/create-change');
 const { tryFetch } = require('./lib/try-fetch');
+const { ABORT_REASON } = require('./lib/abort-reason');
 
 const main = async() => {
   try {
@@ -45,6 +46,7 @@ const main = async() => {
     } catch (err) {
       if (abortOnChangeCreationFailure) {
         status = false;
+        core.setOutput('abort-reason', err.reason || ABORT_REASON.SERVICENOW_ERROR);
         core.setFailed(err.message);
       }
       else { 
@@ -105,6 +107,7 @@ const main = async() => {
 
     }
   } catch (error) {
+    core.setOutput('abort-reason', error.reason || ABORT_REASON.SERVICENOW_ERROR);
     core.setFailed(error.message);
   }
 }
